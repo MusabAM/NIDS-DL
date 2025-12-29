@@ -1,0 +1,95 @@
+# ==============================================================================
+# models.yaml - Model Architecture Configuration
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# Classical Deep Learning Models
+# ------------------------------------------------------------------------------
+classical:
+  cnn:
+    name: "CNN Classifier"
+    description: "1D Convolutional Neural Network for feature extraction"
+    architecture:
+      conv_layers: [64, 128, 256]
+      kernel_sizes: [3, 3, 3]
+      pool_sizes: [2, 2, 2]
+      dense_layers: [256, 128]
+      dropout_rate: 0.3
+      activation: "relu"
+      output_activation: "softmax"  # softmax for multiclass, sigmoid for binary
+    
+  lstm:
+    name: "LSTM Classifier"
+    description: "Long Short-Term Memory network for sequential patterns"
+    architecture:
+      lstm_units: [128, 64]
+      bidirectional: true
+      dense_layers: [128, 64]
+      dropout_rate: 0.3
+      recurrent_dropout: 0.2
+      activation: "tanh"
+      output_activation: "softmax"
+  
+  transformer:
+    name: "Transformer Classifier"
+    description: "Attention-based model for NIDS"
+    architecture:
+      num_heads: 8
+      ff_dim: 256
+      num_transformer_blocks: 4
+      embed_dim: 128
+      dense_layers: [128]
+      dropout_rate: 0.1
+      output_activation: "softmax"
+  
+  autoencoder:
+    name: "Autoencoder Anomaly Detector"
+    description: "Unsupervised anomaly detection using reconstruction error"
+    architecture:
+      encoder_layers: [64, 32, 16]
+      latent_dim: 8
+      decoder_layers: [16, 32, 64]
+      activation: "relu"
+      output_activation: "sigmoid"
+    threshold_percentile: 95  # Reconstruction error threshold
+
+# ------------------------------------------------------------------------------
+# Quantum Machine Learning Models
+# ------------------------------------------------------------------------------
+quantum:
+  vqc_pennylane:
+    name: "Variational Quantum Classifier (PennyLane)"
+    description: "Hybrid classical-quantum classifier using PennyLane"
+    architecture:
+      n_qubits: 8  # Match or reduce from feature dimension
+      n_layers: 4  # Number of variational layers
+      entangling: "strongly_entangling"  # Options: basic, strongly_entangling
+      measurement: "expval"  # Expectation value measurement
+      device: "default.qubit"  # Simulator device
+    classical_preprocessing:
+      pca_components: 8  # Reduce features to match qubits
+  
+  hybrid_tfq:
+    name: "Hybrid Quantum-Classical (TensorFlow Quantum)"
+    description: "TensorFlow Quantum hybrid model with Cirq"
+    architecture:
+      n_qubits: 8
+      n_layers: 3
+      classical_layers: [64, 32]  # Classical post-processing
+      entanglement: "circular"
+    classical_preprocessing:
+      pca_components: 8
+
+# ------------------------------------------------------------------------------
+# Ensemble Models
+# ------------------------------------------------------------------------------
+ensemble:
+  voting:
+    name: "Voting Ensemble"
+    models: ["cnn", "lstm", "transformer"]
+    voting: "soft"  # soft or hard voting
+  
+  stacking:
+    name: "Stacking Ensemble"
+    base_models: ["cnn", "lstm"]
+    meta_model: "logistic_regression"

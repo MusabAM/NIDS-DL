@@ -1,0 +1,17 @@
+{
+    "recommendations": [
+        "ms-python.python",
+        "ms-python.vscode-pylance",
+        "ms-python.black-formatter",
+        "ms-python.isort",
+        "ms-toolsai.jupyter",
+        "ms-toolsai.jupyter-keymap",
+        "ms-toolsai.jupyter-renderers",
+        "eamodio.gitlens",
+        "redhat.vscode-yaml",
+        "yzhang.markdown-all-in-one",
+        "mechatroner.rainbow-csv",
+        "mhutchie.git-graph",
+        "streetsidesoftware.code-spell-checker"
+    ]
+}

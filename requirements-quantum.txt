@@ -1,0 +1,39 @@
+# ==============================================================================
+# NIDS Deep Learning & Quantum ML - Quantum Dependencies
+# ==============================================================================
+# Install after core requirements: pip install -r requirements-quantum.txt
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# PennyLane - Quantum Machine Learning Framework
+# ------------------------------------------------------------------------------
+pennylane>=0.34.0
+pennylane-lightning>=0.34.0  # High-performance simulator
+pennylane-qiskit>=0.34.0     # Qiskit integration
+
+# PennyLane interfaces for DL frameworks
+# (Already included in pennylane, but listing for clarity)
+# pennylane supports both torch and tensorflow natively
+
+# ------------------------------------------------------------------------------
+# TensorFlow Quantum
+# ------------------------------------------------------------------------------
+tensorflow-quantum>=0.7.3
+
+# ------------------------------------------------------------------------------
+# Cirq - Google's Quantum Computing Framework
+# ------------------------------------------------------------------------------
+cirq>=1.3.0
+cirq-core>=1.3.0
+
+# ------------------------------------------------------------------------------
+# Qiskit - IBM Quantum (Optional, for comparison)
+# ------------------------------------------------------------------------------
+qiskit>=1.0.0
+qiskit-machine-learning>=0.7.0
+qiskit-aer>=0.13.0  # Quantum simulator
+
+# ------------------------------------------------------------------------------
+# Additional Quantum Utilities
+# ------------------------------------------------------------------------------
+sympy>=1.12  # Symbolic mathematics (required by Cirq/TFQ)

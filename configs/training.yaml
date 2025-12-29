@@ -1,0 +1,107 @@
+# ==============================================================================
+# training.yaml - Training Configuration
+# ==============================================================================
+
+# ------------------------------------------------------------------------------
+# General Training Settings
+# ------------------------------------------------------------------------------
+general:
+  seed: 42
+  deterministic: true
+  device: "auto"  # auto, cpu, cuda, cuda:0
+  mixed_precision: true  # Use FP16 for faster training
+
+# ------------------------------------------------------------------------------
+# Hyperparameters
+# ------------------------------------------------------------------------------
+hyperparameters:
+  batch_size: 256
+  epochs: 100
+  learning_rate: 0.001
+  optimizer: "adam"  # adam, sgd, adamw, rmsprop
+  optimizer_params:
+    adam:
+      beta_1: 0.9
+      beta_2: 0.999
+      epsilon: 1.0e-7
+    adamw:
+      weight_decay: 0.01
+    sgd:
+      momentum: 0.9
+      nesterov: true
+  
+  scheduler:
+    type: "reduce_on_plateau"  # reduce_on_plateau, cosine, step, warmup
+    patience: 10
+    factor: 0.5
+    min_lr: 1.0e-6
+
+# ------------------------------------------------------------------------------
+# Early Stopping
+# ------------------------------------------------------------------------------
+early_stopping:
+  enabled: true
+  monitor: "val_loss"
+  patience: 15
+  min_delta: 0.0001
+  mode: "min"
+  restore_best_weights: true
+
+# ------------------------------------------------------------------------------
+# Checkpointing
+# ------------------------------------------------------------------------------
+checkpointing:
+  enabled: true
+  save_dir: "./results/models"
+  save_best_only: true
+  monitor: "val_accuracy"
+  mode: "max"
+  save_format: "h5"  # h5, tf, ckpt (TensorFlow) | pt, onnx (PyTorch)
+
+# ------------------------------------------------------------------------------
+# Logging
+# ------------------------------------------------------------------------------
+logging:
+  tensorboard:
+    enabled: true
+    log_dir: "./results/logs/tensorboard"
+    histogram_freq: 1
+  
+  mlflow:
+    enabled: false
+    tracking_uri: "./results/mlruns"
+    experiment_name: "nids-dl"
+  
+  wandb:
+    enabled: false
+    project: "nids-dl"
+    entity: null  # Set your W&B username
+
+# ------------------------------------------------------------------------------
+# Data Augmentation (if applicable)
+# ------------------------------------------------------------------------------
+augmentation:
+  enabled: false
+  noise_injection:
+    enabled: false
+    std: 0.01
+  feature_masking:
+    enabled: false
+    mask_ratio: 0.1
+
+# ------------------------------------------------------------------------------
+# Cross-Validation
+# ------------------------------------------------------------------------------
+cross_validation:
+  enabled: false
+  n_folds: 5
+  stratified: true
+
+# ------------------------------------------------------------------------------
+# Quantum-Specific Training Settings
+# ------------------------------------------------------------------------------
+quantum:
+  use_parameter_shift: true  # Gradient computation method
+  shots: null  # null for exact simulation, integer for shot-based
+  batch_size: 32  # Smaller batches for quantum (memory constraints)
+  epochs: 50  # Fewer epochs (quantum training is slower)

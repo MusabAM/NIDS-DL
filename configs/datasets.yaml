@@ -1,0 +1,118 @@
+# ==============================================================================
+# datasets.yaml - Dataset Configuration for NIDS-DL Project
+# ==============================================================================
+
+datasets:
+  nsl_kdd:
+    name: "NSL-KDD"
+    description: "Refined version of KDD'99 dataset, removing redundant records"
+    url: "https://www.unb.ca/cic/datasets/nsl.html"
+    download_urls:
+      train: "https://raw.githubusercontent.com/defcom17/NSL_KDD/master/KDDTrain%2B.txt"
+      test: "https://raw.githubusercontent.com/defcom17/NSL_KDD/master/KDDTest%2B.txt"
+    features: 41
+    classes:
+      binary: ["Normal", "Attack"]
+      multiclass: ["Normal", "DoS", "Probe", "R2L", "U2R"]
+    train_samples: 125973
+    test_samples: 22544
+    
+  cicids2017:
+    name: "CICIDS2017"
+    description: "Canadian Institute for Cybersecurity IDS 2017"
+    url: "https://www.unb.ca/cic/datasets/ids-2017.html"
+    # Note: Large dataset, recommend downloading directly from UNB website
+    features: 78
+    classes:
+      binary: ["BENIGN", "ATTACK"]
+      multiclass:
+        - "BENIGN"
+        - "Bot"
+        - "DDoS"
+        - "DoS GoldenEye"
+        - "DoS Hulk"
+        - "DoS Slowhttptest"
+        - "DoS slowloris"
+        - "FTP-Patator"
+        - "Heartbleed"
+        - "Infiltration"
+        - "PortScan"
+        - "SSH-Patator"
+        - "Web Attack – Brute Force"
+        - "Web Attack – Sql Injection"
+        - "Web Attack – XSS"
+    days:
+      - "Monday-WorkingHours"
+      - "Tuesday-WorkingHours"
+      - "Wednesday-workingHours"
+      - "Thursday-WorkingHours-Morning"
+      - "Thursday-WorkingHours-Afternoon"
+      - "Friday-WorkingHours-Morning"
+      - "Friday-WorkingHours-Afternoon"
+
+  cicids2018:
+    name: "CICIDS2018"
+    description: "Extended CICIDS dataset with AWS infrastructure"
+    url: "https://www.unb.ca/cic/datasets/ids-2018.html"
+    features: 80
+    classes:
+      binary: ["Benign", "Attack"]
+      multiclass:
+        - "Benign"
+        - "Bot"
+        - "Brute Force -Web"
+        - "Brute Force -XSS"
+        - "DDOS attack-HOIC"
+        - "DDOS attack-LOIC-UDP"
+        - "DDoS attacks-LOIC-HTTP"
+        - "DoS attacks-GoldenEye"
+        - "DoS attacks-Hulk"
+        - "DoS attacks-SlowHTTPTest"
+        - "DoS attacks-Slowloris"
+        - "FTP-BruteForce"
+        - "Infiltration"
+        - "SQL Injection"
+        - "SSH-Bruteforce"
+
+  unsw_nb15:
+    name: "UNSW-NB15"
+    description: "Network intrusion dataset from UNSW Australia"
+    url: "https://research.unsw.edu.au/projects/unsw-nb15-dataset"
+    features: 49
+    classes:
+      binary: ["Normal", "Attack"]
+      multiclass:
+        - "Normal"
+        - "Analysis"
+        - "Backdoor"
+        - "DoS"
+        - "Exploits"
+        - "Fuzzers"
+        - "Generic"
+        - "Reconnaissance"
+        - "Shellcode"
+        - "Worms"
+    train_samples: 175341
+    test_samples: 82332
+
+# Common preprocessing settings
+preprocessing:
+  normalization:
+    methods: ["minmax", "standard", "robust"]
+    default: "standard"
+  
+  handling_missing:
+    strategy: "mean"  # Options: mean, median, mode, drop
+  
+  categorical_encoding:
+    method: "label"  # Options: label, onehot, target
+  
+  class_imbalance:
+    methods: ["smote", "adasyn", "random_undersampling", "class_weights"]
+    default: "smote"
+  
+  train_test_split:
+    test_size: 0.2
+    val_size: 0.1
+    stratify: true
+    random_state: 42
