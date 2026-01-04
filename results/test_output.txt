@@ -1,0 +1,138 @@
+﻿
+=
+=
+=
+=
+=
+=
+=
+=
+=
+=
+=
+=
+=
+=
+=
+=
+=
+=
+=
+=
+=
+=
+=
+=
+=
+=
+=
+=
+=
+=
+=
+=
+=
+=
+=
+=
+=
+=
+=
+=
+=
+=
+=
+=
+=
+=
+=
+=
+=
+=
+=
+=
+=
+=
+=
+=
+=
+=
+=
+=
+  LSTM Model Testing - NSL-KDD Dataset
+============================================================
+
+Loading NSL-KDD dataset...
+Loading NSL-KDD from data\raw\nsl-kdd\train.txt
+.\venv\Scripts\python.exe : Traceback (most recent 
+call last):
+At line:1 char:1
++ .\venv\Scripts\python.exe test_model.py 2>&1 | 
+Out-File -FilePath res ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Trace 
+   back (most recent call last)::String) [], Remo  
+  teException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  File 
+"D:\NIDS-DL-main\NIDS-DL-main\test_model.py", line 
+213, in <module>
+    main()
+  File 
+"D:\NIDS-DL-main\NIDS-DL-main\test_model.py", line 
+46, in main
+    data = get_dataset(
+           ^^^^^^^^^^^^
+  File "D:\NIDS-DL-main\NIDS-DL-main\src\data\datas
+ets.py", line 222, in get_dataset
+    X, y = preprocess_nsl_kdd(train_path, 
+classification)
+           
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\NIDS-DL-main\NIDS-DL-main\src\data\prepr
+ocessing.py", line 100, in preprocess_nsl_kdd
+    console.print(f"[green]\u2713[/green] Loaded 
+{len(df)} samples, {len(features.columns)} 
+features")
+  File "D:\NIDS-DL-main\NIDS-DL-main\venv\Lib\site-
+packages\rich\console.py", line 1697, in print
+    with self:
+  File "D:\NIDS-DL-main\NIDS-DL-main\venv\Lib\site-
+packages\rich\console.py", line 870, in __exit__
+    self._exit_buffer()
+  File "D:\NIDS-DL-main\NIDS-DL-main\venv\Lib\site-
+packages\rich\console.py", line 826, in 
+_exit_buffer
+    self._check_buffer()
+  File "D:\NIDS-DL-main\NIDS-DL-main\venv\Lib\site-
+packages\rich\console.py", line 2038, in 
+_check_buffer
+    self._write_buffer()
+  File "D:\NIDS-DL-main\NIDS-DL-main\venv\Lib\site-
+packages\rich\console.py", line 2074, in 
+_write_buffer
+    legacy_windows_render(buffer, 
+LegacyWindowsTerm(self.file))
+  File "D:\NIDS-DL-main\NIDS-DL-main\venv\Lib\site-
+packages\rich\_windows_renderer.py", line 17, in 
+legacy_windows_render
+    term.write_styled(text, style)
+  File "D:\NIDS-DL-main\NIDS-DL-main\venv\Lib\site-
+packages\rich\_win32_console.py", line 441, in 
+write_styled
+    self.write_text(text)
+  File "D:\NIDS-DL-main\NIDS-DL-main\venv\Lib\site-
+packages\rich\_win32_console.py", line 402, in 
+write_text
+    self.write(text)
+  File "C:\Users\iamfa\AppData\Local\Programs\Pytho
+n\Python312\Lib\encodings\cp1252.py", line 19, in 
+encode
+    return codecs.charmap_encode(input,self.errors,
+encoding_table)[0]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^
+UnicodeEncodeError: 'charmap' codec can't encode 
+character '\u2713' in position 0: character maps 
+to <undefined>

@@ -1,0 +1,11 @@
+Test Accuracy: 80.78%
+Best Validation Accuracy: 99.68%
+
+              precision    recall  f1-score   support
+
+      Normal       0.70      0.98      0.81      9711
+      Attack       0.97      0.68      0.80     12833
+
+    accuracy                           0.81     22544
+   macro avg       0.84      0.83      0.81     22544
+weighted avg       0.85      0.81      0.81     22544

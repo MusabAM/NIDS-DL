@@ -1,0 +1,17 @@
+Dataset: UNSW-NB15
+Model: LSTM (Bidirectional)
+Test Accuracy: 88.48%
+Best Validation Accuracy: 96.90%
+
+              precision    recall  f1-score   support
+
+      Normal       0.74      0.98      0.84     56000
+      Attack       0.99      0.84      0.91    119341
+
+    accuracy                           0.88    175341
+   macro avg       0.87      0.91      0.88    175341
+weighted avg       0.91      0.88      0.89    175341
+
+Confusion Matrix:
+TN: 54751 | FP: 1249
+FN: 18956 | TP: 100385

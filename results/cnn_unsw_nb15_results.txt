@@ -1,0 +1,17 @@
+Dataset: UNSW-NB15
+Model: CNN (1D Convolutional)
+Test Accuracy: 88.78%
+Best Validation Accuracy: 95.87%
+
+              precision    recall  f1-score   support
+
+      Normal       0.75      0.98      0.85     56000
+      Attack       0.99      0.84      0.91    119341
+
+    accuracy                           0.89    175341
+   macro avg       0.87      0.91      0.88    175341
+weighted avg       0.91      0.89      0.89    175341
+
+Confusion Matrix:
+TN: 54863 | FP: 1137
+FN: 18535 | TP: 100806

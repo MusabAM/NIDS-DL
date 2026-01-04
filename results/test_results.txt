@@ -1,0 +1,21 @@
+============================================================
+  LSTM Model Test Results - NSL-KDD Dataset
+============================================================
+Device: cuda
+Test Samples: 25,195
+============================================================
+Accuracy:  59.88%
+Precision: 76.79%
+Recall:    35.76%
+F1 Score:  48.80%
+============================================================
+
+Classification Report:
+              precision    recall  f1-score   support
+
+      Attack       0.54      0.88      0.67     11726
+      Normal       0.77      0.36      0.49     13469
+
+    accuracy                           0.60     25195
+   macro avg       0.66      0.62      0.58     25195
+weighted avg       0.66      0.60      0.57     25195
