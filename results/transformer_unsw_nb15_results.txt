@@ -1,0 +1,17 @@
+Dataset: UNSW-NB15
+Model: Transformer (Self-Attention)
+Test Accuracy: 87.35%
+Best Validation Accuracy: 95.55%
+
+              precision    recall  f1-score   support
+
+      Normal       0.72      0.99      0.83     56000
+      Attack       0.99      0.82      0.90    119341
+
+    accuracy                           0.87    175341
+   macro avg       0.86      0.90      0.87    175341
+weighted avg       0.91      0.87      0.88    175341
+
+Confusion Matrix:
+TN: 55344 | FP: 656
+FN: 21520 | TP: 97821

@@ -1,0 +1,17 @@
+Dataset: NSL-KDD
+Model: Transformer (Self-Attention)
+Test Accuracy: 82.06%
+Best Validation Accuracy: 99.33%
+
+              precision    recall  f1-score   support
+
+      Normal       0.71      0.98      0.82      9711
+      Attack       0.98      0.70      0.82     12833
+
+    accuracy                           0.82     22544
+   macro avg       0.84      0.84      0.82     22544
+weighted avg       0.86      0.82      0.82     22544
+
+Confusion Matrix:
+TN: 9491 | FP: 220
+FN: 3825 | TP: 9008

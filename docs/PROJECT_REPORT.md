@@ -48,18 +48,36 @@ This project implements and evaluates deep learning models for Network Intrusion
 - **Pooling:** MaxPool1d
 - **Regularization:** Dropout (0.4), BatchNorm
 
+### 2.3 Transformer (Self-Attention)
+- **Architecture:** Multi-head self-attention encoder
+- **Embedding:** 64-dim, 4 attention heads
+- **Layers:** 3 transformer blocks with feed-forward (128 units)
+- **Pooling:** Global average pooling from sequence
+- **Regularization:** Dropout (0.3)
+
+### 2.4 Autoencoder (Anomaly Detection)
+- **Architecture:** Encoder-Decoder with bottleneck
+- **Encoder:** Input → 64 → 32 → 16 → 8 (latent)
+- **Decoder:** 8 → 16 → 32 → 64 → Input
+- **Training:** Normal traffic only (unsupervised)
+- **Detection:** High reconstruction error = anomaly
+
 ---
 
 ## 3. Experimental Results
 
 ### 3.1 Performance Summary
 
-| Dataset | Model | Test Acc | Val Acc | Precision | Recall | F1-Score |
+| Dataset | Model | Test Acc | ROC-AUC | Precision | Recall | F1-Score |
 |---------|-------|----------|---------|-----------|--------|----------|
-| NSL-KDD | LSTM | **80.78%** | 99.68% | 0.85 | 0.81 | 0.81 |
-| NSL-KDD | CNN | 78.84% | 99.60% | 0.85 | 0.79 | 0.79 |
-| UNSW-NB15 | LSTM | 88.48% | 96.90% | 0.91 | 0.88 | 0.89 |
-| UNSW-NB15 | CNN | **88.78%** | 95.87% | 0.91 | 0.89 | 0.89 |
+| NSL-KDD | LSTM | 80.78% | - | 0.85 | 0.81 | 0.81 |
+| NSL-KDD | CNN | 78.84% | - | 0.85 | 0.79 | 0.79 |
+| NSL-KDD | Transformer | 82.06% | - | 0.86 | 0.82 | 0.82 |
+| NSL-KDD | Autoencoder | **85.53%** | **0.9468** | 0.86 | 0.86 | 0.87 |
+| UNSW-NB15 | LSTM | 88.48% | - | 0.91 | 0.88 | 0.89 |
+| UNSW-NB15 | CNN | **88.78%** | - | 0.91 | 0.89 | 0.89 |
+| UNSW-NB15 | Transformer | 87.35% | - | 0.91 | 0.87 | 0.88 |
+| UNSW-NB15 | Autoencoder | 88.04% | **0.9809** | 0.91 | 0.88 | 0.88 |
 
 ### 3.2 Best Model: CNN on UNSW-NB15
 
@@ -127,11 +145,15 @@ NIDS-DL/
 │   │   ├── lstm_improved_best.pt
 │   │   ├── cnn_best.pt
 │   │   ├── lstm_unsw_nb15_best.pt
-│   │   └── cnn_unsw_nb15_best.pt
+│   │   ├── cnn_unsw_nb15_best.pt
+│   │   ├── autoencoder_nsl_kdd_best.pt
+│   │   └── autoencoder_unsw_nb15_best.pt
 │   ├── lstm_improved_results.txt
 │   ├── cnn_results.txt
 │   ├── lstm_unsw_nb15_results.txt
-│   └── cnn_unsw_nb15_results.txt
+│   ├── cnn_unsw_nb15_results.txt
+│   ├── autoencoder_nsl_kdd_results.txt
+│   └── autoencoder_unsw_nb15_results.txt
 ├── src/                       # Source code modules
 │   ├── models/               # Model implementations
 │   ├── data/                 # Data loading
@@ -139,7 +161,9 @@ NIDS-DL/
 ├── train_lstm_improved.py    # NSL-KDD LSTM training
 ├── train_cnn.py              # NSL-KDD CNN training
 ├── train_lstm_unsw.py        # UNSW-NB15 LSTM training
-└── train_cnn_unsw.py         # UNSW-NB15 CNN training
+├── train_cnn_unsw.py         # UNSW-NB15 CNN training
+├── train_autoencoder.py      # NSL-KDD Autoencoder training
+└── train_autoencoder_unsw.py # UNSW-NB15 Autoencoder training
 ```
 
 ---
@@ -171,11 +195,13 @@ NIDS-DL/
 
 ## 8. Future Work
 
-1. **Transformer Model** - Implement self-attention for complex patterns
-2. **Autoencoder** - Unsupervised anomaly detection
+1. ~~**Transformer Model** - Implement self-attention for complex patterns~~ ✓ COMPLETED
+2. ~~**Autoencoder** - Unsupervised anomaly detection~~ ✓ COMPLETED
 3. **Quantum ML** - PennyLane variational quantum classifiers
 4. **Multi-class Classification** - Detect specific attack types
 5. **Real-time Inference** - Deploy models for live detection
+6. **Ensemble Methods** - Combine autoencoder with supervised models
+7. **Improved Autoencoder** - Variational Autoencoder (VAE) for better anomaly scoring
 
 ---
 

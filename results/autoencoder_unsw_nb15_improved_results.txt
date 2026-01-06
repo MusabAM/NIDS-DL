@@ -1,0 +1,18 @@
+Dataset: UNSW-NB15
+Model: Improved Autoencoder
+Test Accuracy: 66.02%
+F1 Score: 0.6610
+ROC-AUC: 0.7508
+
+              precision    recall  f1-score   support
+
+      Normal       0.61      0.68      0.64     37000
+      Attack       0.71      0.64      0.68     45332
+
+    accuracy                           0.66     82332
+   macro avg       0.66      0.66      0.66     82332
+weighted avg       0.67      0.66      0.66     82332
+
+Confusion Matrix:
+TN: 25140 | FP: 11860
+FN: 16120 | TP: 29212

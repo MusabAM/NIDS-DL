@@ -1,0 +1,25 @@
+Dataset: NSL-KDD
+Model: Autoencoder (Anomaly Detection)
+Training: Normal traffic only (60,609 samples)
+Threshold Percentile: 90%
+Threshold Value: 0.006839
+
+Test Accuracy: 85.53%
+ROC-AUC: 0.9468
+
+              precision    recall  f1-score   support
+
+      Normal       0.79      0.90      0.84      9711
+      Attack       0.92      0.82      0.87     12833
+
+    accuracy                           0.86     22544
+   macro avg       0.85      0.86      0.85     22544
+weighted avg       0.86      0.86      0.86     22544
+
+Confusion Matrix:
+TN: 8741 | FP: 970
+FN: 2291 | TP: 10542
+
+Reconstruction Error Statistics:
+Normal Traffic Mean: 0.002843
+Attack Traffic Mean: 0.050969
