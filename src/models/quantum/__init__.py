@@ -1,19 +1,32 @@
 """Quantum machine learning models."""
 
 from .pennylane_models import (
-    QuantumClassifier,
     HybridQuantumClassifier,
+    QuantumClassifier,
     create_quantum_layer,
 )
-from .tfq_models import (
-    TFQClassifier,
-    create_tfq_model,
-)
+
+# TFQ imports are optional
+try:
+    from .tfq_models import TFQClassifier, create_tfq_model
+
+    _TFQ_AVAILABLE = True
+except ImportError:
+    _TFQ_AVAILABLE = False
+    TFQClassifier = None
+    create_tfq_model = None
 
 __all__ = [
     "QuantumClassifier",
     "HybridQuantumClassifier",
     "create_quantum_layer",
-    "TFQClassifier",
-    "create_tfq_model",
 ]
+
+# Add TFQ exports only if available
+if _TFQ_AVAILABLE:
+    __all__.extend(
+        [
+            "TFQClassifier",
+            "create_tfq_model",
+        ]
+    )
