@@ -1,0 +1,16 @@
+LSTM CICIDS2018 Results
+==================================================
+Test Accuracy: 95.90%
+
+              precision    recall  f1-score   support
+
+      Benign       0.93      0.99      0.96     30000
+      Attack       0.99      0.93      0.96     30000
+
+    accuracy                           0.96     60000
+   macro avg       0.96      0.96      0.96     60000
+weighted avg       0.96      0.96      0.96     60000
+
+Confusion Matrix:
+[[29744   256]
+ [ 2205 27795]]

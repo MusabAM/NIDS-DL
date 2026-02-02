@@ -1,0 +1,19 @@
+CNN CICIDS2018 Results
+==================================================
+Test Accuracy: 96.43%
+Precision: 0.9931
+Recall: 0.9352
+F1-Score: 0.9633
+
+              precision    recall  f1-score   support
+
+      Benign       0.94      0.99      0.97     75000
+      Attack       0.99      0.94      0.96     75000
+
+    accuracy                           0.96    150000
+   macro avg       0.97      0.96      0.96    150000
+weighted avg       0.97      0.96      0.96    150000
+
+Confusion Matrix:
+[[74514   486]
+ [ 4863 70137]]

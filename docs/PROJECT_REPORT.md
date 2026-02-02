@@ -1,14 +1,14 @@
 # NIDS-DL Project Report
 ## Network Intrusion Detection using Deep Learning
 
-**Project Date:** January 2026  
+**Project Date:** January - February 2026  
 **Team Members:** [Your Names Here]
 
 ---
 
 ## Executive Summary
 
-This project implements and evaluates deep learning models for Network Intrusion Detection Systems (NIDS). We trained and tested **LSTM** and **CNN** models on two benchmark datasets: **NSL-KDD** and **UNSW-NB15**. The best performing model achieved **88.78% test accuracy** using CNN on UNSW-NB15.
+This project implements and evaluates deep learning models for Network Intrusion Detection Systems (NIDS). We trained and tested **LSTM**, **CNN**, **Transformer**, and **Autoencoder** models on four benchmark datasets: **NSL-KDD**, **UNSW-NB15**, **CICIDS2017**, and **CICIDS2018**. The best performing model achieved **98.00% test accuracy** using CNN on CICIDS2017.
 
 ---
 
@@ -31,6 +31,26 @@ This project implements and evaluates deep learning models for Network Intrusion
 | Features | 42 (after preprocessing) |
 | Classification | Binary (Normal/Attack) |
 | Attack Categories | 9 types |
+
+### 1.3 CICIDS2017
+| Property | Value |
+|----------|-------|
+| Total Samples | 2,830,743 |
+| After Cleaning | 2,827,876 |
+| Features | 77 |
+| Classification | Binary (Benign/Attack) |
+| Benign Samples | 2,271,320 |
+| Attack Samples | 556,556 |
+
+### 1.4 CICIDS2018
+| Property | Value |
+|----------|-------|
+| Total Samples | 8,284,254 |
+| After Cleaning | ~8,247,888 |
+| Features | 76 |
+| Classification | Binary (Benign/Attack) |
+| Benign Samples | 6,077,145 |
+| Attack Samples | 2,170,743 |
 
 ---
 
@@ -75,11 +95,92 @@ This project implements and evaluates deep learning models for Network Intrusion
 | NSL-KDD | Transformer | 82.06% | - | 0.86 | 0.82 | 0.82 |
 | NSL-KDD | Autoencoder | **85.53%** | **0.9468** | 0.86 | 0.86 | 0.87 |
 | UNSW-NB15 | LSTM | 88.48% | - | 0.91 | 0.88 | 0.89 |
-| UNSW-NB15 | CNN | **88.78%** | - | 0.91 | 0.89 | 0.89 |
+| UNSW-NB15 | CNN | 88.78% | - | 0.91 | 0.89 | 0.89 |
 | UNSW-NB15 | Transformer | 87.35% | - | 0.91 | 0.87 | 0.88 |
 | UNSW-NB15 | Autoencoder | 88.04% | **0.9809** | 0.91 | 0.88 | 0.88 |
+| CICIDS2017 | CNN | **98.00%** | - | 0.97 | 0.97 | 0.97 |
+| CICIDS2018 | CNN | **96.43%** | - | 0.97 | 0.96 | 0.96 |
+| CICIDS2018 | Transformer | 96.05% | - | 0.96 | 0.96 | 0.96 |
+| CICIDS2018 | LSTM | 95.90% | - | 0.96 | 0.96 | 0.96 |
+| CICIDS2018 | Autoencoder (Supervised) | **96.16%** | - | 0.96 | 0.96 | 0.96 |
 
-### 3.2 Best Model: CNN on UNSW-NB15
+### 3.2 Best Model: CNN on CICIDS2017
+
+```
+Test Accuracy: 98.00%
+
+              precision    recall  f1-score   support
+
+      Benign       0.99      0.99      0.99    340698
+      Attack       0.95      0.95      0.95     83484
+
+    accuracy                           0.98    424182
+```
+
+### 3.3 CNN on CICIDS2018
+
+```
+Test Accuracy: 96.43%
+
+              precision    recall  f1-score   support
+
+      Benign       0.94      0.99      0.97     75000
+      Attack       0.99      0.94      0.96     75000
+
+    accuracy                           0.96    150000
+
+Confusion Matrix:
+TN: 74,514 | FP: 486
+FN: 4,863 | TP: 70,137
+```
+
+### 3.4 Transformer on CICIDS2018
+
+```
+Test Accuracy: 96.05%
+
+              precision    recall  f1-score   support
+
+      Benign       0.94      0.99      0.96     45000
+      Attack       0.99      0.94      0.96     45000
+
+    accuracy                           0.96     90000
+```
+
+### 3.5 LSTM on CICIDS2018
+
+```
+Test Accuracy: 95.90%
+
+              precision    recall  f1-score   support
+
+      Benign       0.93      0.99      0.96     30000
+      Attack       0.99      0.93      0.96     30000
+
+    accuracy                           0.96     60000
+```
+
+### 3.6 Autoencoder on CICIDS2018 (Supervised)
+
+**Goal met: >95% Accuracy**
+
+```
+Test Accuracy: 96.16%
+
+              precision    recall  f1-score   support
+
+      Benign       0.94      0.99      0.96     30000
+      Attack       0.99      0.93      0.96     30000
+
+    accuracy                           0.96     60000
+
+Confusion Matrix:
+TN: 29,755 | FP: 245
+FN: 2,062  | TP: 27,938
+```
+> **Note**: Switch to Supervised Learning (Classification + Reconstruction) successfully resolved the accuracy bottleneck, improving from 71% to 96.16%.
+
+### 3.7 CNN on UNSW-NB15
 
 ```
 Test Accuracy: 88.78%
@@ -97,7 +198,7 @@ TN: 54,863 | FP: 1,137
 FN: 18,535 | TP: 100,806
 ```
 
-### 3.3 NSL-KDD Results (LSTM)
+### 3.8 NSL-KDD Results (LSTM)
 
 ```
 Test Accuracy: 80.78%
@@ -116,19 +217,20 @@ Validation Accuracy: 99.68%
 ## 4. Key Findings
 
 ### 4.1 Dataset Comparison
-- **UNSW-NB15** shows better generalization (smaller val-test gap: ~7% vs ~19%)
+- **CICIDS datasets** show better generalization and higher accuracy (96-98%)
+- **UNSW-NB15** shows good generalization (smaller val-test gap: ~7% vs ~19%)
 - NSL-KDD exhibits significant overfitting despite regularization
-- UNSW-NB15 provides more realistic network traffic patterns
+- CICIDS2017/2018 provide more realistic modern network traffic patterns
 
 ### 4.2 Model Comparison
-- **CNN** slightly outperforms LSTM on UNSW-NB15 (88.78% vs 88.48%)
-- **LSTM** performs better on NSL-KDD (80.78% vs 78.84%)
-- Both models achieve high attack precision (97-99%)
+- **CNN** achieves best results on CICIDS2017 (98.00%)
+- **CNN** performs consistently well across all datasets
+- Both supervised models achieve high attack precision (95-99%)
 
 ### 4.3 Detection Analysis
-- **Normal traffic detection:** 98% recall (low false negatives)
-- **Attack detection:** 84% recall with 99% precision
-- Trade-off: Prioritizing low false alarms over catching all attacks
+- **CICIDS2017:** 99% recall on benign, 95% on attacks
+- **CICIDS2018:** 99% recall on benign, 94% on attacks
+- Trade-off: High precision with minimal false alarms
 
 ---
 
@@ -139,7 +241,9 @@ NIDS-DL/
 ├── configs/                    # Configuration files
 ├── data/raw/                   # Dataset storage
 │   ├── nsl-kdd/               # NSL-KDD dataset
-│   └── unsw-nb15/             # UNSW-NB15 dataset
+│   ├── unsw-nb15/             # UNSW-NB15 dataset
+│   ├── cicids2017/            # CICIDS2017 dataset
+│   └── cicids2018/            # CICIDS2018 dataset
 ├── results/
 │   ├── models/                # Saved model weights
 │   │   ├── lstm_improved_best.pt
@@ -147,13 +251,21 @@ NIDS-DL/
 │   │   ├── lstm_unsw_nb15_best.pt
 │   │   ├── cnn_unsw_nb15_best.pt
 │   │   ├── autoencoder_nsl_kdd_best.pt
-│   │   └── autoencoder_unsw_nb15_best.pt
+│   │   ├── autoencoder_unsw_nb15_best.pt
+│   │   ├── best_cnn_cicids2018.pth
+│   │   ├── transformer_cicids2018_best.pt
+│   │   ├── best_lstm_cicids2018.pth
+│   │   └── best_autoencoder_cicids2018.pth
 │   ├── lstm_improved_results.txt
 │   ├── cnn_results.txt
 │   ├── lstm_unsw_nb15_results.txt
 │   ├── cnn_unsw_nb15_results.txt
 │   ├── autoencoder_nsl_kdd_results.txt
-│   └── autoencoder_unsw_nb15_results.txt
+│   ├── autoencoder_unsw_nb15_results.txt
+│   ├── cnn_cicids2018_results.txt
+│   ├── transformer_cicids2018_results.txt
+│   ├── lstm_cicids2018_results.txt
+│   └── autoencoder_cicids2018_results.txt
 ├── src/                       # Source code modules
 │   ├── models/               # Model implementations
 │   ├── data/                 # Data loading
@@ -197,17 +309,18 @@ NIDS-DL/
 
 1. ~~**Transformer Model** - Implement self-attention for complex patterns~~ ✓ COMPLETED
 2. ~~**Autoencoder** - Unsupervised anomaly detection~~ ✓ COMPLETED
-3. **Quantum ML** - PennyLane variational quantum classifiers
-4. **Multi-class Classification** - Detect specific attack types
-5. **Real-time Inference** - Deploy models for live detection
-6. **Ensemble Methods** - Combine autoencoder with supervised models
-7. **Improved Autoencoder** - Variational Autoencoder (VAE) for better anomaly scoring
+3. ~~**CICIDS Datasets** - Train on CICIDS2017 and CICIDS2018~~ ✓ COMPLETED
+4. **Quantum ML** - PennyLane variational quantum classifiers
+5. **Multi-class Classification** - Detect specific attack types
+6. **Real-time Inference** - Deploy models for live detection
+7. **Ensemble Methods** - Combine autoencoder with supervised models
+8. **Improved Autoencoder** - Variational Autoencoder (VAE) for better anomaly scoring
 
 ---
 
 ## 9. Conclusion
 
-This project successfully demonstrates the application of deep learning to network intrusion detection. The CNN model on UNSW-NB15 achieved the best test accuracy of **88.78%** with high attack detection precision (99%). The project provides a solid foundation for further research into more advanced architectures and real-world deployment.
+This project successfully demonstrates the application of deep learning to network intrusion detection. We evaluated models on four datasets, with the CNN model on **CICIDS2017 achieving the best test accuracy of 98.00%** and **CICIDS2018 achieving 96.43%**. All models demonstrate high attack detection precision (95-99%), providing a solid foundation for further research into more advanced architectures and real-world deployment.
 
 ---
 
@@ -215,8 +328,10 @@ This project successfully demonstrates the application of deep learning to netwo
 
 1. NSL-KDD Dataset - https://www.unb.ca/cic/datasets/nsl.html
 2. UNSW-NB15 Dataset - https://research.unsw.edu.au/projects/unsw-nb15-dataset
-3. PyTorch Documentation - https://pytorch.org/docs/
+3. CICIDS2017 Dataset - https://www.unb.ca/cic/datasets/ids-2017.html
+4. CICIDS2018 Dataset - https://www.unb.ca/cic/datasets/ids-2018.html
+5. PyTorch Documentation - https://pytorch.org/docs/
 
 ---
 
-*Report Generated: January 4, 2026*
+*Report Generated: February 2, 2026*

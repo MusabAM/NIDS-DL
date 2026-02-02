@@ -193,6 +193,102 @@ class Autoencoder(nn.Module):
         return self.reconstruction_error(x)
 
 
+class SupervisedAutoencoder(nn.Module):
+    """
+    Supervised Autoencoder for simultaneous reconstruction and classification.
+    
+    Architecture:
+        - Encoder: Input -> Latent
+        - Decoder: Latent -> Reconstruction
+        - Classifier: Latent -> Class Prediction
+        
+    Forward returns: (reconstruction, logits, latent)
+    """
+    
+    def __init__(
+        self,
+        input_dim: int,
+        num_classes: int = 2,
+        encoder_units: List[int] = [64, 32, 16],
+        latent_dim: int = 8,
+        decoder_units: Optional[List[int]] = None,
+        dropout_rate: float = 0.2,
+        activation: str = "relu",
+    ):
+        super().__init__()
+        
+        self.input_dim = input_dim
+        self.latent_dim = latent_dim
+        
+        if decoder_units is None:
+            decoder_units = list(reversed(encoder_units))
+            
+        # Activation function
+        activations = {
+            "relu": nn.ReLU(),
+            "tanh": nn.Tanh(),
+            "leaky_relu": nn.LeakyReLU(0.2),
+        }
+        self.activation = activations.get(activation, nn.ReLU())
+        
+        # Build encoder
+        encoder_layers = []
+        in_features = input_dim
+        
+        for units in encoder_units:
+            encoder_layers.extend([
+                nn.Linear(in_features, units),
+                nn.BatchNorm1d(units),
+                self.activation,
+                nn.Dropout(dropout_rate),
+            ])
+            in_features = units
+        
+        encoder_layers.append(nn.Linear(in_features, latent_dim))
+        self.encoder = nn.Sequential(*encoder_layers)
+        
+        # Build decoder
+        decoder_layers = []
+        in_features = latent_dim
+        
+        for units in decoder_units:
+            decoder_layers.extend([
+                nn.Linear(in_features, units),
+                nn.BatchNorm1d(units),
+                self.activation,
+                nn.Dropout(dropout_rate),
+            ])
+            in_features = units
+        
+        decoder_layers.append(nn.Linear(in_features, input_dim))
+        decoder_layers.append(nn.Sigmoid()) 
+        self.decoder = nn.Sequential(*decoder_layers)
+        
+        # Build Classifier
+        self.classifier = nn.Sequential(
+            nn.Linear(latent_dim, 32),
+            nn.ReLU(),
+            nn.Dropout(dropout_rate),
+            nn.Linear(32, num_classes)
+        )
+        
+    def forward(self, x: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+        """
+        Forward pass.
+        Returns: (reconstruction, logits, latent_vector)
+        """
+        z = self.encoder(x)
+        x_recon = self.decoder(z)
+        logits = self.classifier(z)
+        return x_recon, logits, z
+        
+    def predict(self, x: torch.Tensor) -> torch.Tensor:
+        """Predict class labels."""
+        with torch.no_grad():
+            _, logits, _ = self.forward(x)
+            return torch.argmax(logits, dim=1)
+
+
 # ==============================================================================
 # TensorFlow/Keras Autoencoder
 # ==============================================================================
