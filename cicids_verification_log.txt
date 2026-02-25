@@ -1,0 +1,12 @@
+Verifying CICIDS2017 Models...
+Device: cpu
+Feature Cols Count: 77
+
+--- Loading Transformer ---
+Success: Transformer loaded.
+
+--- Loading Autoencoder ---
+Success: Autoencoder loaded.
+
+--- Loading CNN ---
+Success: CNN loaded.

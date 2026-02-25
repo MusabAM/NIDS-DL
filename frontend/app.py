@@ -56,12 +56,20 @@ page = st.sidebar.radio(
 )
 
 st.sidebar.markdown("---")
+# Dataset Selection Dropdown
+dataset_name = st.sidebar.selectbox(
+    "Select Dataset", ["NSL-KDD", "UNSW-NB15", "CICIDS2017"]
+)
+
 # Model Selection Dropdown
-model_type = st.sidebar.selectbox("Select Model", ["CNN", "LSTM", "Transformer"])
+# Filter available models based on dataset
+available_models = list(utils.DATASET_CONFIG[dataset_name]["models"].keys())
+model_type = st.sidebar.selectbox("Select Model", available_models)
 
 st.sidebar.info(
     "**Status**: Online\n\n"
-    f"**Model**: {model_type} (NSL-KDD)\n\n"
+    f"**Dataset**: {dataset_name}\n\n"
+    f"**Model**: {model_type}\n\n"
     "**Device**: " + ("CUDA 🟢" if torch.cuda.is_available() else "CPU 🟠")
 )
 
@@ -70,13 +78,15 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 @st.cache_data
-def get_cached_feature_columns():
-    return utils.load_feature_columns()
+def get_cached_feature_columns(dataset_name):
+    return utils.load_feature_columns(dataset_name)
 
 
 try:
-    feature_cols = get_cached_feature_columns()
-    model, scaler = utils.load_model_and_scaler(model_type, device)
+    feature_cols = get_cached_feature_columns(dataset_name)
+    model, scaler, encoders = utils.load_model_and_scaler(
+        model_type, dataset_name, device
+    )
     model_loaded = model is not None
     if not model_loaded:
         st.sidebar.error(
@@ -169,6 +179,26 @@ elif page == "Live Prediction":
         st.warning("⚠️ Model not loaded. Please train the model or check paths.")
         st.stop()
 
+    if dataset_name != "NSL-KDD":
+        st.warning(
+            f"⚠️ Live Prediction form is currently optimized for NSL-KDD. {dataset_name} has different features."
+        )
+        st.info(
+            "Please use Batch Analysis for this dataset, or Switch to NSL-KDD for live form demo."
+        )
+        # We could implement dynamic forms here, but for now we restrict it.
+        # Allowing it might cause shape mismatch errors if we don't handle 41 vs 42 vs 77 features.
+
+        # Optional: Allow upload of single sample JSON/CSV for other datasets?
+        # For now, just stop.
+        # st.stop()
+        # Actually, let's just show the form but warn that it might fail if features don't match.
+        # But wait, the form has specific fields like 'flag' etc which might not exist or be different.
+        # UNSW has 'state' instead of 'flag', 'proto' instead of 'protocol_type'.
+        # CICIDS has completely different flow features.
+        # So stopping is safer.
+        st.stop()
+
     st.markdown("Enter network flow parameters to classify traffic.")
 
     with st.form("prediction_form"):
@@ -253,20 +283,42 @@ elif page == "Live Prediction":
 
         # Predict
         with torch.no_grad():
-            outputs = model(X_tensor)
-            probs = torch.softmax(outputs, dim=1)
-            pred_class = torch.argmax(probs, dim=1).item()
-            confidence = probs[0][pred_class].item()
+            if model_type == "Autoencoder":
+                loss = model.reconstruction_error(X_tensor).item()
+                confidence = loss  # Use reconstruction error as score
+                threshold = 0.1  # Default threshold
+                pred_class = 1 if loss > threshold else 0
+            else:
+                outputs = model(X_tensor)
+                probs = torch.softmax(outputs, dim=1)
+                pred_class = torch.argmax(probs, dim=1).item()
+                confidence = probs[0][pred_class].item()
 
         # Result
         st.markdown("### Analysis Result")
 
         if pred_class == 1:
             st.error(f"🚨 **Threat Detected: ATTACK**")
-            st.metric("Confidence", f"{confidence*100:.2f}%")
+            label = (
+                "Reconstruction Error" if model_type == "Autoencoder" else "Confidence"
+            )
+            val = (
+                f"{confidence:.4f}"
+                if model_type == "Autoencoder"
+                else f"{confidence*100:.2f}%"
+            )
+            st.metric(label, val)
         else:
             st.success(f"✅ **Traffic Status: NORMAL**")
-            st.metric("Confidence", f"{confidence*100:.2f}%")
+            label = (
+                "Reconstruction Error" if model_type == "Autoencoder" else "Confidence"
+            )
+            val = (
+                f"{confidence:.4f}"
+                if model_type == "Autoencoder"
+                else f"{confidence*100:.2f}%"
+            )
+            st.metric(label, val)
 
         # Feature contribution (simple bar chart of input values for visual)
         st.bar_chart(df[["src_bytes", "dst_bytes", "count"]].T)
@@ -300,14 +352,28 @@ elif page == "Batch Analysis":
 
                 # Preprocess
                 # Handle missing columns if dataset is partial
-                missing_cols = [c for c in utils.COLUMNS[:-2] if c not in df.columns]
+                # For NSL-KDD we use header constants if missing
+                if dataset_name == "NSL-KDD":
+                    missing_cols = [
+                        c for c in utils.COLUMNS[:-2] if c not in df.columns
+                    ]
+                else:
+                    missing_cols = []  # We rely on feature_cols matching
+
+                # If too many missing, maybe input format is raw?
                 # If too many missing, maybe input format is raw?
                 if len(missing_cols) > 20:
                     # Try setting header=None and names=COLUMNS
                     uploaded_file.seek(0)
-                    df = pd.read_csv(uploaded_file, header=None, names=utils.COLUMNS)
+                    if dataset_name == "NSL-KDD":
+                        uploaded_file.seek(0)
+                        df = pd.read_csv(
+                            uploaded_file, header=None, names=utils.COLUMNS
+                        )
 
-                X_scaled = utils.preprocess_input(df, scaler, feature_cols)
+                X_scaled = utils.preprocess_input(
+                    df, scaler, feature_cols, encoders, dataset_name
+                )
 
                 # Batch Predict (in chunks to save memory if large)
                 batch_size = 1000
@@ -319,11 +385,18 @@ elif page == "Batch Analysis":
                         X_batch = torch.FloatTensor(X_scaled[i : i + batch_size]).to(
                             device
                         )
-                        outputs = model(X_batch)
-                        probs = torch.softmax(outputs, dim=1)
-                        preds = torch.argmax(probs, dim=1)
-                        all_preds.extend(preds.cpu().numpy())
-                        all_probs.extend(probs[:, 1].cpu().numpy())
+                        if model_type == "Autoencoder":
+                            losses = model.reconstruction_error(X_batch)
+                            preds = (losses > 0.1).long()  # Threshold 0.1
+                            all_preds.extend(preds.cpu().numpy())
+                            all_probs.extend(losses.cpu().numpy())
+                        else:
+                            outputs = model(X_batch)
+                            probs = torch.softmax(outputs, dim=1)
+                            preds = torch.argmax(probs, dim=1)
+                            all_preds.extend(preds.cpu().numpy())
+                            all_probs.extend(probs[:, 1].cpu().numpy())
+
                         progress.progress(min(1.0, (i + batch_size) / len(X_scaled)))
 
                 df["Prediction"] = ["Attack" if p == 1 else "Normal" for p in all_preds]

@@ -1,0 +1,11 @@
+Verifying UNSW-NB15 Models...
+Device: cpu
+
+--- Loading Transformer ---
+Success: Transformer loaded.
+
+--- Loading Autoencoder ---
+Success: Autoencoder loaded.
+
+--- Loading CNN ---
+Success: CNN loaded.
