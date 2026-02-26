@@ -30,7 +30,7 @@
                 0 25px 80px rgba(0, 0, 0, 0.4),
                 0 0 0 1px rgba(255, 255, 255, 0.1);
             overflow: hidden;
-            max-width: 1200px;
+            max-width: 1400px;
             width: 100%;
         }
 
@@ -106,12 +106,16 @@
             width: 320px;
         }
 
-        .gantt-table th.week {
-            width: 95px;
+        .gantt-table th.month {
+            width: 110px;
             text-align: center;
             background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
             color: white;
             border-bottom: none;
+        }
+
+        .gantt-table th.month.current {
+            background: linear-gradient(180deg, #f093fb 0%, #f5576c 100%);
         }
 
         .gantt-table td {
@@ -147,7 +151,7 @@
             border-bottom: none;
         }
 
-        .week-cell {
+        .month-cell {
             position: relative;
             height: 100%;
             background: rgba(248, 250, 252, 0.5);
@@ -167,13 +171,13 @@
             filter: brightness(1.1);
         }
 
-        /* Single week bar - centered */
+        /* Single month bar - centered */
         .bar.single {
             left: 12%;
             right: 12%;
         }
 
-        /* Start of multi-week bar */
+        /* Start of multi-month bar */
         .bar.start {
             left: 12%;
             right: 0;
@@ -181,17 +185,32 @@
             border-bottom-right-radius: 0;
         }
 
-        /* Middle of multi-week bar */
+        /* Middle of multi-month bar */
         .bar.middle {
             left: 0;
             right: 0;
             border-radius: 0;
         }
 
-        /* End of multi-week bar */
+        /* End of multi-month bar */
         .bar.end {
             left: 0;
             right: 12%;
+            border-top-left-radius: 0;
+            border-bottom-left-radius: 0;
+        }
+
+        /* Partial bar - half month */
+        .bar.half-start {
+            left: 50%;
+            right: 0;
+            border-top-right-radius: 0;
+            border-bottom-right-radius: 0;
+        }
+
+        .bar.half-end {
+            left: 0;
+            right: 85%;
             border-top-left-radius: 0;
             border-bottom-left-radius: 0;
         }
@@ -262,6 +281,24 @@
             box-shadow: 0 4px 15px rgba(255, 81, 47, 0.5);
         }
 
+        /* Row 12 - Electric Blue for CIC-IDS 2017 */
+        .row-12 .bar {
+            background: linear-gradient(135deg, #00d2ff 0%, #3a7bd5 100%);
+            box-shadow: 0 4px 15px rgba(0, 210, 255, 0.5);
+        }
+
+        /* Row 13 - Indigo for CIC-IDS 2018 */
+        .row-13 .bar {
+            background: linear-gradient(135deg, #5c6bc0 0%, #7e57c2 100%);
+            box-shadow: 0 4px 15px rgba(92, 107, 192, 0.5);
+        }
+
+        /* Row 14 - Quantum Purple/Pink */
+        .row-14 .bar {
+            background: linear-gradient(135deg, #9c27b0 0%, #e91e63 100%);
+            box-shadow: 0 4px 15px rgba(156, 39, 176, 0.5);
+        }
+
         .footer {
             background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
             padding: 22px 30px;
@@ -288,11 +325,11 @@
         }
 
         /* Alternating row backgrounds */
-        .gantt-table tbody tr:nth-child(odd) .week-cell {
+        .gantt-table tbody tr:nth-child(odd) .month-cell {
             background: rgba(248, 250, 252, 0.8);
         }
 
-        .gantt-table tbody tr:nth-child(even) .week-cell {
+        .gantt-table tbody tr:nth-child(even) .month-cell {
             background: rgba(255, 255, 255, 0.9);
         }
 
@@ -322,154 +359,198 @@
             <thead>
                 <tr>
                     <th>TASKS</th>
-                    <th class="week">Week 1</th>
-                    <th class="week">Week 2</th>
-                    <th class="week">Week 3</th>
-                    <th class="week">Week 4</th>
-                    <th class="week">Week 5</th>
+                    <th class="month">Dec 2025</th>
+                    <th class="month">Jan 2026</th>
+                    <th class="month current">Feb 2026</th>
+                    <th class="month">Mar 2026</th>
+                    <th class="month">Apr 2026</th>
                 </tr>
             </thead>
             <tbody>
                 <!-- Row 1: Literature Survey -->
                 <tr class="row-1">
                     <td>Literature Survey & Research</td>
-                    <td class="week-cell">
+                    <td class="month-cell">
                         <div class="bar start"></div>
                     </td>
-                    <td class="week-cell">
+                    <td class="month-cell">
                         <div class="bar end"></div>
                     </td>
-                    <td class="week-cell"></td>
-                    <td class="week-cell"></td>
-                    <td class="week-cell"></td>
+                    <td class="month-cell"></td>
+                    <td class="month-cell"></td>
+                    <td class="month-cell"></td>
                 </tr>
 
                 <!-- Row 2: Problem Definition -->
                 <tr class="row-2">
                     <td>Problem Definition</td>
-                    <td class="week-cell"></td>
-                    <td class="week-cell">
+                    <td class="month-cell">
                         <div class="bar single"></div>
                     </td>
-                    <td class="week-cell"></td>
-                    <td class="week-cell"></td>
-                    <td class="week-cell"></td>
+                    <td class="month-cell"></td>
+                    <td class="month-cell"></td>
+                    <td class="month-cell"></td>
+                    <td class="month-cell"></td>
                 </tr>
 
                 <!-- Row 3: System Design -->
                 <tr class="row-3">
                     <td>Proposed System Design</td>
-                    <td class="week-cell"></td>
-                    <td class="week-cell">
-                        <div class="bar start"></div>
+                    <td class="month-cell">
+                        <div class="bar half-start"></div>
                     </td>
-                    <td class="week-cell">
+                    <td class="month-cell">
                         <div class="bar end"></div>
                     </td>
-                    <td class="week-cell"></td>
-                    <td class="week-cell"></td>
+                    <td class="month-cell"></td>
+                    <td class="month-cell"></td>
+                    <td class="month-cell"></td>
                 </tr>
 
                 <!-- Row 4: CUDA Environment Setup -->
                 <tr class="row-4">
                     <td>CUDA Environment Setup</td>
-                    <td class="week-cell"></td>
-                    <td class="week-cell"></td>
-                    <td class="week-cell">
+                    <td class="month-cell"></td>
+                    <td class="month-cell">
                         <div class="bar single"></div>
                     </td>
-                    <td class="week-cell"></td>
-                    <td class="week-cell"></td>
+                    <td class="month-cell"></td>
+                    <td class="month-cell"></td>
+                    <td class="month-cell"></td>
                 </tr>
 
                 <!-- Row 5: Dataset Collection -->
                 <tr class="row-5">
                     <td>Dataset Collection & Preprocessing<small>(NSL-KDD, UNSW-NB15)</small></td>
-                    <td class="week-cell"></td>
-                    <td class="week-cell"></td>
-                    <td class="week-cell">
+                    <td class="month-cell"></td>
+                    <td class="month-cell">
                         <div class="bar single"></div>
                     </td>
-                    <td class="week-cell"></td>
-                    <td class="week-cell"></td>
+                    <td class="month-cell"></td>
+                    <td class="month-cell"></td>
+                    <td class="month-cell"></td>
+                </tr>
+
+                <!-- Row 12: CIC-IDS 2017 Dataset -->
+                <tr class="row-12">
+                    <td>CIC-IDS 2017 Dataset Processing<small>(Jan - Feb 4, 2026)</small></td>
+                    <td class="month-cell"></td>
+                    <td class="month-cell">
+                        <div class="bar start"></div>
+                    </td>
+                    <td class="month-cell">
+                        <div class="bar half-end"></div>
+                    </td>
+                    <td class="month-cell"></td>
+                    <td class="month-cell"></td>
+                </tr>
+
+                <!-- Row 13: CIC-IDS 2018 Dataset -->
+                <tr class="row-13">
+                    <td>CIC-IDS 2018 Dataset Processing<small>(Feb 9 - Mar 5, 2026)</small></td>
+                    <td class="month-cell"></td>
+                    <td class="month-cell"></td>
+                    <td class="month-cell">
+                        <div class="bar start"></div>
+                    </td>
+                    <td class="month-cell">
+                        <div class="bar half-end"></div>
+                    </td>
+                    <td class="month-cell"></td>
+                </tr>
+
+                <!-- Row 14: Quantum Computing Integration -->
+                <tr class="row-14">
+                    <td>Quantum Computing Integration<small>(Feb 9 - Mar 5, 2026)</small></td>
+                    <td class="month-cell"></td>
+                    <td class="month-cell"></td>
+                    <td class="month-cell">
+                        <div class="bar start"></div>
+                    </td>
+                    <td class="month-cell">
+                        <div class="bar half-end"></div>
+                    </td>
+                    <td class="month-cell"></td>
                 </tr>
 
                 <!-- Row 6: Feature Selection -->
                 <tr class="row-6">
                     <td>Feature Selection & Engineering</td>
-                    <td class="week-cell"></td>
-                    <td class="week-cell"></td>
-                    <td class="week-cell">
+                    <td class="month-cell"></td>
+                    <td class="month-cell">
                         <div class="bar start"></div>
                     </td>
-                    <td class="week-cell">
+                    <td class="month-cell">
                         <div class="bar end"></div>
                     </td>
-                    <td class="week-cell"></td>
+                    <td class="month-cell"></td>
+                    <td class="month-cell"></td>
                 </tr>
 
                 <!-- Row 7: Model Development -->
                 <tr class="row-7">
                     <td>Model Development<small>(LSTM, CNN, Transformer, Autoencoder)</small></td>
-                    <td class="week-cell"></td>
-                    <td class="week-cell"></td>
-                    <td class="week-cell">
+                    <td class="month-cell"></td>
+                    <td class="month-cell">
                         <div class="bar start"></div>
                     </td>
-                    <td class="week-cell">
+                    <td class="month-cell">
                         <div class="bar end"></div>
                     </td>
-                    <td class="week-cell"></td>
+                    <td class="month-cell"></td>
+                    <td class="month-cell"></td>
                 </tr>
 
                 <!-- Row 8: Model Training -->
                 <tr class="row-8">
                     <td>Model Training & Testing</td>
-                    <td class="week-cell"></td>
-                    <td class="week-cell"></td>
-                    <td class="week-cell"></td>
-                    <td class="week-cell">
+                    <td class="month-cell"></td>
+                    <td class="month-cell"></td>
+                    <td class="month-cell">
                         <div class="bar start"></div>
                     </td>
-                    <td class="week-cell">
+                    <td class="month-cell">
                         <div class="bar end"></div>
                     </td>
+                    <td class="month-cell"></td>
                 </tr>
 
                 <!-- Row 9: Streamlit Dashboard -->
                 <tr class="row-9">
                     <td>Streamlit Dashboard</td>
-                    <td class="week-cell"></td>
-                    <td class="week-cell"></td>
-                    <td class="week-cell"></td>
-                    <td class="week-cell"></td>
-                    <td class="week-cell">
+                    <td class="month-cell"></td>
+                    <td class="month-cell"></td>
+                    <td class="month-cell"></td>
+                    <td class="month-cell">
                         <div class="bar single"></div>
                     </td>
+                    <td class="month-cell"></td>
                 </tr>
 
                 <!-- Row 10: Performance Evaluation -->
                 <tr class="row-10">
                     <td>Performance Evaluation & Comparison</td>
-                    <td class="week-cell"></td>
-                    <td class="week-cell"></td>
-                    <td class="week-cell"></td>
-                    <td class="week-cell"></td>
-                    <td class="week-cell">
-                        <div class="bar single"></div>
+                    <td class="month-cell"></td>
+                    <td class="month-cell"></td>
+                    <td class="month-cell"></td>
+                    <td class="month-cell">
+                        <div class="bar start"></div>
+                    </td>
+                    <td class="month-cell">
+                        <div class="bar end"></div>
                     </td>
                 </tr>
 
                 <!-- Row 11: Documentation -->
                 <tr class="row-11">
                     <td>Documentation & Report Writing</td>
-                    <td class="week-cell"></td>
-                    <td class="week-cell"></td>
-                    <td class="week-cell"></td>
-                    <td class="week-cell">
+                    <td class="month-cell"></td>
+                    <td class="month-cell"></td>
+                    <td class="month-cell"></td>
+                    <td class="month-cell">
                         <div class="bar start"></div>
                     </td>
-                    <td class="week-cell">
+                    <td class="month-cell">
                         <div class="bar end"></div>
                     </td>
                 </tr>
@@ -478,7 +559,7 @@
 
         <div class="footer">
             <span class="project-name">NIDS-DL: Deep Learning for Network Security</span>
-            <span class="date">January 2026</span>
+            <span class="date">December 2025 - April 2026</span>
         </div>
     </div>
 </body>
