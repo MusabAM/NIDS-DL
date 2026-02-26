@@ -143,3 +143,6 @@ Thumbs.db
 *.tmp
 *.temp
 *.bak
+
+# Exclude dashboard as per user request (temporary)
+frontend/pro_dashboard.py

@@ -56,12 +56,17 @@ page = st.sidebar.radio(
 )
 
 st.sidebar.markdown("---")
+
+# Dataset Selection
+dataset = st.sidebar.selectbox("Select Dataset", ["NSL-KDD", "CICIDS2018"])
+
 # Model Selection Dropdown
 model_type = st.sidebar.selectbox("Select Model", ["CNN", "LSTM", "Transformer"])
 
 st.sidebar.info(
     "**Status**: Online\n\n"
-    f"**Model**: {model_type} (NSL-KDD)\n\n"
+    f"**Dataset**: {dataset}\n\n"
+    f"**Model**: {model_type}\n\n"
     "**Device**: " + ("CUDA 🟢" if torch.cuda.is_available() else "CPU 🟠")
 )
 
@@ -70,17 +75,18 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 @st.cache_data
-def get_cached_feature_columns():
-    return utils.load_feature_columns()
+def get_cached_feature_columns(_dataset):
+    return utils.load_feature_columns(_dataset)
 
 
 try:
-    feature_cols = get_cached_feature_columns()
-    model, scaler = utils.load_model_and_scaler(model_type, device)
+    feature_cols = get_cached_feature_columns(dataset)
+    model, scaler = utils.load_model_and_scaler(model_type, device, dataset)
     model_loaded = model is not None
     if not model_loaded:
         st.sidebar.error(
-            f"Failed to load {model_type} model. Check if file exists in results/models/."
+            f"Failed to load {model_type} model for {dataset}. "
+            f"Check if model file exists in results/models/."
         )
 except Exception as e:
     st.error(f"Error loading resources: {e}")
@@ -111,13 +117,19 @@ if page == "Dashboard":
         )
 
     with col2:
-        acc = "88.78%"  # Placeholder or load from results
+        if dataset == "CICIDS2018":
+            acc = "96.43%"
+            dataset_label = "CICIDS2018"
+        else:
+            acc = "88.78%"
+            dataset_label = "NSL-KDD"
+
         st.markdown(
             f"""
         <div class="card">
             <h4>Model Accuracy</h4>
             <div class="metric-value">{acc}</div>
-            <p>On UNSW-NB15 Test Set</p>
+            <p>On {dataset_label} Test Set</p>
         </div>
         """,
             unsafe_allow_html=True,
@@ -137,21 +149,29 @@ if page == "Dashboard":
 
     st.markdown("### Model Performance Overview")
 
-    # Placeholder data for visualization
-    chart_data = pd.DataFrame(
-        {
-            "Model": ["CNN", "LSTM", "Transformer", "Autoencoder"],
-            "Accuracy": [88.78, 88.48, 87.35, 88.04],
-            "F1-Score": [0.89, 0.89, 0.88, 0.88],
-        }
-    )
+    if dataset == "CICIDS2018":
+        chart_data = pd.DataFrame(
+            {
+                "Model": ["CNN", "LSTM", "Transformer", "Autoencoder"],
+                "Accuracy": [96.43, 95.90, 96.05, 95.0],
+                "F1-Score": [0.96, 0.96, 0.96, 0.95],
+            }
+        )
+    else:
+        chart_data = pd.DataFrame(
+            {
+                "Model": ["CNN", "LSTM", "Transformer", "Autoencoder"],
+                "Accuracy": [88.78, 88.48, 87.35, 88.04],
+                "F1-Score": [0.89, 0.89, 0.88, 0.88],
+            }
+        )
 
     fig = px.bar(
         chart_data,
         x="Model",
         y=["Accuracy", "F1-Score"],
         barmode="group",
-        title="Comparative Analysis of Deep Learning Models",
+        title=f"Comparative Analysis of Deep Learning Models ({dataset})",
         color_discrete_sequence=["#1E88E5", "#FFC107"],
     )
     st.plotly_chart(fig, use_container_width=True)
@@ -169,113 +189,177 @@ elif page == "Live Prediction":
         st.warning("⚠️ Model not loaded. Please train the model or check paths.")
         st.stop()
 
-    st.markdown("Enter network flow parameters to classify traffic.")
+    st.markdown(f"Enter network flow parameters to classify traffic. (**{dataset}** mode)")
 
-    with st.form("prediction_form"):
-        col1, col2 = st.columns(2)
+    if dataset == "NSL-KDD":
+        # NSL-KDD Live Prediction Form
+        with st.form("prediction_form"):
+            col1, col2 = st.columns(2)
 
-        with col1:
-            duration = st.number_input("Duration", min_value=0, value=0)
-            src_bytes = st.number_input("Source Bytes", min_value=0, value=100)
-            dst_bytes = st.number_input("Destination Bytes", min_value=0, value=0)
-            protocol = st.selectbox("Protocol", ["tcp", "udp", "icmp"])
+            with col1:
+                duration = st.number_input("Duration", min_value=0, value=0)
+                src_bytes = st.number_input("Source Bytes", min_value=0, value=100)
+                dst_bytes = st.number_input("Destination Bytes", min_value=0, value=0)
+                protocol = st.selectbox("Protocol", ["tcp", "udp", "icmp"])
 
-        with col2:
-            service = st.selectbox(
-                "Service", ["http", "private", "ftp_data", "smtp", "other"]
-            )
-            flag = st.selectbox("Flag", ["SF", "S0", "REJ", "RSTR"])
-            count = st.number_input("Count (Traffic Rate)", min_value=0, value=1)
+            with col2:
+                service = st.selectbox(
+                    "Service", ["http", "private", "ftp_data", "smtp", "other"]
+                )
+                flag = st.selectbox("Flag", ["SF", "S0", "REJ", "RSTR"])
+                count = st.number_input("Count (Traffic Rate)", min_value=0, value=1)
 
-        # Add hidden details expander for more features if needed
-        with st.expander("Advanced Network Features"):
-            serror_rate = st.slider("SYN Error Rate", 0.0, 1.0, 0.0)
-            rerror_rate = st.slider("REJ Error Rate", 0.0, 1.0, 0.0)
-            same_srv_rate = st.slider("Same Service Rate", 0.0, 1.0, 1.0)
+            with st.expander("Advanced Network Features"):
+                serror_rate = st.slider("SYN Error Rate", 0.0, 1.0, 0.0)
+                rerror_rate = st.slider("REJ Error Rate", 0.0, 1.0, 0.0)
+                same_srv_rate = st.slider("Same Service Rate", 0.0, 1.0, 1.0)
 
-        submitted = st.form_submit_button("Analyze Traffic")
+            submitted = st.form_submit_button("Analyze Traffic")
 
-    if submitted:
-        # Construct DataFrame
-        # NOTE: This assumes we populate ONLY the critical fields used by the model
-        # For a real implementation, we'd need to populate ALL 41 features with defaults
+        if submitted:
+            input_data = {
+                "duration": duration,
+                "protocol_type": protocol,
+                "service": service,
+                "flag": flag,
+                "src_bytes": src_bytes,
+                "dst_bytes": dst_bytes,
+                "count": count,
+                "serror_rate": serror_rate,
+                "rerror_rate": rerror_rate,
+                "same_srv_rate": same_srv_rate,
+                "land": 0,
+                "wrong_fragment": 0,
+                "urgent": 0,
+                "hot": 0,
+                "num_failed_logins": 0,
+                "logged_in": 1,
+                "num_compromised": 0,
+                "root_shell": 0,
+                "su_attempted": 0,
+                "num_root": 0,
+                "num_file_creations": 0,
+                "num_shells": 0,
+                "num_access_files": 0,
+                "num_outbound_cmds": 0,
+                "is_host_login": 0,
+                "is_guest_login": 0,
+                "srv_count": count,
+                "srv_serror_rate": serror_rate,
+                "srv_rerror_rate": rerror_rate,
+                "diff_srv_rate": 0.0,
+                "srv_diff_host_rate": 0.0,
+                "dst_host_count": 1,
+                "dst_host_srv_count": 1,
+                "dst_host_same_srv_rate": 1.0,
+                "dst_host_diff_srv_rate": 0.0,
+                "dst_host_same_src_port_rate": 0.0,
+                "dst_host_srv_diff_host_rate": 0.0,
+                "dst_host_serror_rate": serror_rate,
+                "dst_host_srv_serror_rate": serror_rate,
+                "dst_host_rerror_rate": rerror_rate,
+                "dst_host_srv_rerror_rate": rerror_rate,
+            }
 
-        input_data = {
-            "duration": duration,
-            "protocol_type": protocol,
-            "service": service,
-            "flag": flag,
-            "src_bytes": src_bytes,
-            "dst_bytes": dst_bytes,
-            "count": count,
-            "serror_rate": serror_rate,
-            "rerror_rate": rerror_rate,
-            "same_srv_rate": same_srv_rate,
-            # Defaults for others
-            "land": 0,
-            "wrong_fragment": 0,
-            "urgent": 0,
-            "hot": 0,
-            "num_failed_logins": 0,
-            "logged_in": 1,
-            "num_compromised": 0,
-            "root_shell": 0,
-            "su_attempted": 0,
-            "num_root": 0,
-            "num_file_creations": 0,
-            "num_shells": 0,
-            "num_access_files": 0,
-            "num_outbound_cmds": 0,
-            "is_host_login": 0,
-            "is_guest_login": 0,
-            "srv_count": count,
-            "srv_serror_rate": serror_rate,
-            "srv_rerror_rate": rerror_rate,
-            "diff_srv_rate": 0.0,
-            "srv_diff_host_rate": 0.0,
-            "dst_host_count": 1,
-            "dst_host_srv_count": 1,
-            "dst_host_same_srv_rate": 1.0,
-            "dst_host_diff_srv_rate": 0.0,
-            "dst_host_same_src_port_rate": 0.0,
-            "dst_host_srv_diff_host_rate": 0.0,
-            "dst_host_serror_rate": serror_rate,
-            "dst_host_srv_serror_rate": serror_rate,
-            "dst_host_rerror_rate": rerror_rate,
-            "dst_host_srv_rerror_rate": rerror_rate,
-        }
+            df = pd.DataFrame([input_data])
+            X_scaled = utils.preprocess_input(df, scaler, feature_cols, dataset)
+            X_tensor = torch.FloatTensor(X_scaled).to(device)
 
-        df = pd.DataFrame([input_data])
+            with torch.no_grad():
+                outputs = model(X_tensor)
+                probs = torch.softmax(outputs, dim=1)
+                pred_class = torch.argmax(probs, dim=1).item()
+                confidence = probs[0][pred_class].item()
 
-        # Preprocess
-        X_scaled = utils.preprocess_input(df, scaler, feature_cols)
-        X_tensor = torch.FloatTensor(X_scaled).to(device)
+            st.markdown("### Analysis Result")
 
-        # Predict
-        with torch.no_grad():
-            outputs = model(X_tensor)
-            probs = torch.softmax(outputs, dim=1)
-            pred_class = torch.argmax(probs, dim=1).item()
-            confidence = probs[0][pred_class].item()
+            if pred_class == 1:
+                st.error(f"🚨 **Threat Detected: ATTACK**")
+                st.metric("Confidence", f"{confidence*100:.2f}%")
+            else:
+                st.success(f"✅ **Traffic Status: NORMAL**")
+                st.metric("Confidence", f"{confidence*100:.2f}%")
 
-        # Result
-        st.markdown("### Analysis Result")
+            st.bar_chart(df[["src_bytes", "dst_bytes", "count"]].T)
 
-        if pred_class == 1:
-            st.error(f"🚨 **Threat Detected: ATTACK**")
-            st.metric("Confidence", f"{confidence*100:.2f}%")
-        else:
-            st.success(f"✅ **Traffic Status: NORMAL**")
-            st.metric("Confidence", f"{confidence*100:.2f}%")
+    elif dataset == "CICIDS2018":
+        # CICIDS2018 Live Prediction Form
+        with st.form("cicids_prediction_form"):
+            st.markdown("#### CICIDS2018 Network Flow Features")
 
-        # Feature contribution (simple bar chart of input values for visual)
-        st.bar_chart(df[["src_bytes", "dst_bytes", "count"]].T)
+            col1, col2, col3 = st.columns(3)
+
+            with col1:
+                flow_duration = st.number_input("Flow Duration", min_value=0, value=0)
+                tot_fwd_pkts = st.number_input("Total Fwd Packets", min_value=0, value=1)
+                tot_bwd_pkts = st.number_input("Total Bwd Packets", min_value=0, value=0)
+                fwd_pkt_len_mean = st.number_input("Fwd Pkt Len Mean", min_value=0.0, value=100.0)
+
+            with col2:
+                bwd_pkt_len_mean = st.number_input("Bwd Pkt Len Mean", min_value=0.0, value=0.0)
+                flow_byts_s = st.number_input("Flow Bytes/s", min_value=0.0, value=1000.0)
+                flow_pkts_s = st.number_input("Flow Packets/s", min_value=0.0, value=10.0)
+                flow_iat_mean = st.number_input("Flow IAT Mean", min_value=0.0, value=0.0)
+
+            with col3:
+                fwd_iat_mean = st.number_input("Fwd IAT Mean", min_value=0.0, value=0.0)
+                bwd_iat_mean = st.number_input("Bwd IAT Mean", min_value=0.0, value=0.0)
+                pkt_len_mean = st.number_input("Pkt Len Mean", min_value=0.0, value=50.0)
+                down_up_ratio = st.number_input("Down/Up Ratio", min_value=0, value=0)
+
+            submitted = st.form_submit_button("Analyze Traffic")
+
+        if submitted:
+            # Build a row with all features, defaulting most to 0
+            input_data = {}
+            if feature_cols is not None:
+                for col in feature_cols:
+                    input_data[col] = 0.0
+
+            # Set the values we collected
+            field_mappings = {
+                "Flow Duration": flow_duration,
+                "Tot Fwd Pkts": tot_fwd_pkts,
+                "Tot Bwd Pkts": tot_bwd_pkts,
+                "Fwd Pkt Len Mean": fwd_pkt_len_mean,
+                "Bwd Pkt Len Mean": bwd_pkt_len_mean,
+                "Flow Byts/s": flow_byts_s,
+                "Flow Pkts/s": flow_pkts_s,
+                "Flow IAT Mean": flow_iat_mean,
+                "Fwd IAT Mean": fwd_iat_mean,
+                "Bwd IAT Mean": bwd_iat_mean,
+                "Pkt Len Mean": pkt_len_mean,
+                "Down/Up Ratio": down_up_ratio,
+            }
+            for key, value in field_mappings.items():
+                if key in input_data:
+                    input_data[key] = value
+
+            df = pd.DataFrame([input_data])
+            X_scaled = utils.preprocess_cicids2018_input(df, scaler, feature_cols)
+            X_tensor = torch.FloatTensor(X_scaled).to(device)
+
+            with torch.no_grad():
+                outputs = model(X_tensor)
+                probs = torch.softmax(outputs, dim=1)
+                pred_class = torch.argmax(probs, dim=1).item()
+                confidence = probs[0][pred_class].item()
+
+            st.markdown("### Analysis Result")
+
+            if pred_class == 1:
+                st.error(f"🚨 **Threat Detected: ATTACK**")
+                st.metric("Confidence", f"{confidence*100:.2f}%")
+            else:
+                st.success(f"✅ **Traffic Status: NORMAL**")
+                st.metric("Confidence", f"{confidence*100:.2f}%")
 
 # ==============================================================================
 # PAGE: Batch Analysis
 # ==============================================================================
 elif page == "Batch Analysis":
     st.header("📂 Batch File Analysis")
+    st.markdown(f"**Dataset mode:** {dataset}")
 
     uploaded_file = st.file_uploader(
         "Upload CSV / PCAP (Pre-processed)", type=["csv", "txt"]
@@ -283,31 +367,33 @@ elif page == "Batch Analysis":
 
     if uploaded_file and model_loaded:
         try:
-            # Assuming NSL-KDD format (no header or specific header)
-            # For simplicity, assuming user uploads a file with headers or we use COLUMNS
-            # Tricky part: Uploaded file might not have headers.
-            # We'll try to read it.
-
             df = pd.read_csv(uploaded_file)
-
-            # If columns don't match, warn user
-            # (Simplification: We assume valid schema for now)
-
             st.write(f"Loaded {len(df)} samples.")
 
             if st.button("Run Predictions"):
                 progress = st.progress(0)
 
-                # Preprocess
-                # Handle missing columns if dataset is partial
-                missing_cols = [c for c in utils.COLUMNS[:-2] if c not in df.columns]
-                # If too many missing, maybe input format is raw?
-                if len(missing_cols) > 20:
-                    # Try setting header=None and names=COLUMNS
-                    uploaded_file.seek(0)
-                    df = pd.read_csv(uploaded_file, header=None, names=utils.COLUMNS)
+                if dataset == "NSL-KDD":
+                    # NSL-KDD preprocessing
+                    missing_cols = [
+                        c for c in utils.NSL_KDD_COLUMNS[:-2] if c not in df.columns
+                    ]
+                    if len(missing_cols) > 20:
+                        uploaded_file.seek(0)
+                        df = pd.read_csv(
+                            uploaded_file,
+                            header=None,
+                            names=utils.NSL_KDD_COLUMNS,
+                        )
 
-                X_scaled = utils.preprocess_input(df, scaler, feature_cols)
+                    X_scaled = utils.preprocess_input(
+                        df, scaler, feature_cols, dataset
+                    )
+                elif dataset == "CICIDS2018":
+                    # CICIDS2018 preprocessing
+                    X_scaled = utils.preprocess_input(
+                        df, scaler, feature_cols, dataset
+                    )
 
                 # Batch Predict (in chunks to save memory if large)
                 batch_size = 1000
@@ -326,8 +412,16 @@ elif page == "Batch Analysis":
                         all_probs.extend(probs[:, 1].cpu().numpy())
                         progress.progress(min(1.0, (i + batch_size) / len(X_scaled)))
 
-                df["Prediction"] = ["Attack" if p == 1 else "Normal" for p in all_preds]
-                df["Attack_Probability"] = all_probs
+                # Re-read original file for display (since preprocessing modifies df)
+                uploaded_file.seek(0)
+                df_display = pd.read_csv(uploaded_file)
+                # Trim to match processed rows (NaN rows may have been dropped)
+                df_display = df_display.head(len(all_preds))
+
+                df_display["Prediction"] = [
+                    "Attack" if p == 1 else "Normal" for p in all_preds
+                ]
+                df_display["Attack_Probability"] = all_probs
 
                 st.success("Analysis Complete!")
 
@@ -355,10 +449,10 @@ elif page == "Batch Analysis":
                 st.plotly_chart(fig)
 
                 # Data Table
-                st.dataframe(df.head(100))
+                st.dataframe(df_display.head(100))
 
                 # Download
-                csv = df.to_csv(index=False).encode("utf-8")
+                csv = df_display.to_csv(index=False).encode("utf-8")
                 st.download_button(
                     "Download Results CSV", csv, "results.csv", "text/csv"
                 )
