@@ -58,7 +58,7 @@ page = st.sidebar.radio(
 st.sidebar.markdown("---")
 
 # Dataset Selection
-dataset = st.sidebar.selectbox("Select Dataset", ["NSL-KDD", "CICIDS2018"])
+dataset = st.sidebar.selectbox("Select Dataset", ["NSL-KDD", "UNSW-NB15", "CICIDS2017", "CICIDS2018"])
 
 # Model Selection Dropdown
 model_type = st.sidebar.selectbox("Select Model", ["CNN", "LSTM", "Transformer"])
@@ -81,7 +81,8 @@ def get_cached_feature_columns(_dataset):
 
 try:
     feature_cols = get_cached_feature_columns(dataset)
-    model, scaler = utils.load_model_and_scaler(model_type, device, dataset)
+    # New signature: load_model_and_scaler(model_name, dataset_name, device)
+    model, scaler, encoders = utils.load_model_and_scaler(model_type, dataset, device)
     model_loaded = model is not None
     if not model_loaded:
         st.sidebar.error(
@@ -262,7 +263,7 @@ elif page == "Live Prediction":
             }
 
             df = pd.DataFrame([input_data])
-            X_scaled = utils.preprocess_input(df, scaler, feature_cols, dataset)
+            X_scaled = utils.preprocess_input(df, scaler, feature_cols, None, dataset)
             X_tensor = torch.FloatTensor(X_scaled).to(device)
 
             with torch.no_grad():
@@ -387,12 +388,7 @@ elif page == "Batch Analysis":
                         )
 
                     X_scaled = utils.preprocess_input(
-                        df, scaler, feature_cols, dataset
-                    )
-                elif dataset == "CICIDS2018":
-                    # CICIDS2018 preprocessing
-                    X_scaled = utils.preprocess_input(
-                        df, scaler, feature_cols, dataset
+                        df, scaler, feature_cols, None, dataset
                     )
 
                 # Batch Predict (in chunks to save memory if large)
