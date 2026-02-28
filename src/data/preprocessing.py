@@ -17,6 +17,7 @@ from sklearn.preprocessing import (
 from sklearn.model_selection import train_test_split
 from imblearn.over_sampling import SMOTE, ADASYN
 from imblearn.under_sampling import RandomUnderSampler
+from sklearn.feature_selection import mutual_info_classif, SelectKBest
 from rich.console import Console
 
 console = Console()
@@ -279,6 +280,87 @@ def encode_categorical(
         df = pd.get_dummies(df, columns=categorical_cols, drop_first=True)
     
     return df, encoders
+
+
+def feature_engineering(
+    df: pd.DataFrame,
+    skew_threshold: float = 0.75,
+) -> pd.DataFrame:
+    """
+    Apply feature engineering like log transformation for skewed features.
+    
+    Args:
+        df: Input DataFrame
+        skew_threshold: Threshold for skewness to apply log transform
+        
+    Returns:
+        DataFrame with engineered features
+    """
+    df = df.copy()
+    numeric_cols = df.select_dtypes(include=[np.number]).columns
+    
+    # Log transform highly skewed features
+    skewed_features = df[numeric_cols].apply(lambda x: x.skew()).sort_values(ascending=False)
+    high_skew = skewed_features[abs(skewed_features) > skew_threshold].index
+    
+    if len(high_skew) > 0:
+        console.print(f"[blue]Applying log transformation to {len(high_skew)} skewed features[/blue]")
+        for col in high_skew:
+            # Add small constant to handle zeros
+            df[col] = np.log1p(df[col] - df[col].min())
+            
+    return df
+
+
+def select_features(
+    X: pd.DataFrame,
+    y: Union[pd.Series, np.ndarray],
+    k: Union[int, float] = 0.8,
+    method: str = "mutual_info",
+) -> Tuple[pd.DataFrame, List[str]]:
+    """
+    Select top features using statistical methods.
+    
+    Args:
+        X: Feature DataFrame
+        y: Labels
+        k: Number of features (int) or proportion (float)
+        method: 'mutual_info' or 'correlation'
+        
+    Returns:
+        Tuple of (selected DataFrame, list of selected features)
+    """
+    if isinstance(k, float):
+        k = int(len(X.columns) * k)
+        
+    console.print(f"[blue]Selecting top {k} features using {method}...[/blue]")
+    
+    if method == "mutual_info":
+        if len(X) > 50000:
+            X_sample = X.sample(50000, random_state=42)
+            y_sample = y[:50000] if isinstance(y, np.ndarray) else y.iloc[:50000]
+            selector = SelectKBest(mutual_info_classif, k=k)
+            selector.fit(X_sample, y_sample)
+        else:
+            selector = SelectKBest(mutual_info_classif, k=k)
+            selector.fit(X, y)
+            
+        selected_features = X.columns[selector.get_support()].tolist()
+        
+    elif method == "correlation":
+        corr_matrix = X.corr().abs()
+        upper = upper = corr_matrix.where(np.triu(np.ones(corr_matrix.shape), k=1).astype(bool))
+        to_drop = [column for column in upper.columns if any(upper[column] > 0.95)]
+        selected_features = [c for c in X.columns if c not in to_drop]
+        
+        if len(selected_features) > k:
+            selected_features = selected_features[:k]
+            
+    else:
+        raise ValueError(f"Unknown selection method: {method}")
+        
+    console.print(f"[green]✓[/green] Selected {len(selected_features)} features")
+    return X[selected_features], selected_features
 
 
 def normalize_features(

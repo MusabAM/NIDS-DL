@@ -186,6 +186,9 @@ def get_dataset(
     test_size: float = 0.2,
     val_size: float = 0.1,
     random_state: int = 42,
+    feature_engineering: bool = False,
+    feature_selection: bool = False,
+    k_features: Union[int, float] = 0.8,
 ) -> Dict[str, Any]:
     """
     Load and preprocess a complete dataset.
@@ -199,6 +202,9 @@ def get_dataset(
         test_size: Test set proportion
         val_size: Validation set proportion
         random_state: Random seed
+        feature_engineering: Whether to apply feature engineering (log transform)
+        feature_selection: Whether to apply feature selection
+        k_features: Number/proportion of features to keep
         
     Returns:
         Dictionary with processed data and metadata
@@ -212,6 +218,8 @@ def get_dataset(
         encode_labels,
         handle_class_imbalance,
         split_data,
+        feature_engineering as apply_eng,
+        select_features as apply_sel,
     )
     
     data_path = Path(data_dir) / "raw"
@@ -229,11 +237,20 @@ def get_dataset(
     else:
         raise ValueError(f"Unknown dataset: {name}")
     
-    # Encode categorical features
-    X, cat_encoders = encode_categorical(X, method="label")
+    # Feature Engineering (Log Transformation)
+    if feature_engineering:
+        X = apply_eng(X)
     
     # Encode labels
     y_encoded, label_encoder = encode_labels(y)
+    
+    # Encode categorical features (Requirement for Mutual Information)
+    X, cat_encoders = encode_categorical(X, method="label")
+    
+    # Feature Selection
+    selected_features = X.columns.tolist()
+    if feature_selection:
+        X, selected_features = apply_sel(X, y_encoded, k=k_features)
     
     # Split data
     X_train, X_val, X_test, y_train, y_val, y_test = split_data(
@@ -276,5 +293,5 @@ def get_dataset(
         "info": info,
         "scaler": scaler,
         "label_encoder": label_encoder,
-        "feature_names": X.columns.tolist(),
+        "feature_names": selected_features,
     }
