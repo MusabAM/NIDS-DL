@@ -1,0 +1,18 @@
+Dataset: NSL-KDD
+Model: CNN (Improved - L2 + Label Smoothing + Threshold Tuning)
+Best Val Accuracy: 99.58%
+Test Accuracy: 78.69%
+Optimal Threshold: 0.30
+
+              precision    recall  f1-score   support
+
+      Normal       0.68      0.97      0.80      9711
+      Attack       0.97      0.65      0.78     12833
+
+    accuracy                           0.79     22544
+   macro avg       0.82      0.81      0.79     22544
+weighted avg       0.84      0.79      0.78     22544
+
+Confusion Matrix:
+TN: 9460 | FP: 251
+FN: 4554 | TP: 8279

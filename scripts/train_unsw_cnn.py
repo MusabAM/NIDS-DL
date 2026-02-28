@@ -69,19 +69,30 @@ def load_unsw(data_path):
     if not csv_files:
         raise FileNotFoundError(f"No CSV files found in {data_path}")
 
-    dfs = [pd.read_csv(f, low_memory=False) for f in csv_files]
-    df  = pd.concat(dfs, ignore_index=True)
-    df.columns = df.columns.str.strip().str.lower()
+    dfs = []
+    for f in csv_files:
+        print(f"  Reading {os.path.basename(f)}...")
+        # Use low_memory=False to handle mixed types in columns like dsport
+        df_temp = pd.read_csv(f, low_memory=False)
+        df_temp.columns = df_temp.columns.str.strip().str.lower()
+        
+        # Drop identifiers and label cats immediately to save RAM
+        drop_cols = [c for c in ['id', 'srcip', 'dstip', 'sport', 'dsport'] if c in df_temp.columns]
+        df_temp.drop(columns=drop_cols, inplace=True)
+        dfs.append(df_temp)
+        
+    df = pd.concat(dfs, ignore_index=True)
+    del dfs
 
     # Labels
     if 'label' in df.columns:
         y = df['label'].values.astype(int)
+        df.drop(columns=['label'], inplace=True, errors='ignore')
     else:
         y = (df['attack_cat'].fillna('Normal') != 'Normal').astype(int).values
-
-    # Drop identifier/label columns
-    drop_cols = [c for c in ['label', 'attack_cat', 'id', 'srcip', 'dstip', 'sport', 'dsport'] if c in df.columns]
-    df.drop(columns=drop_cols, inplace=True)
+    
+    if 'attack_cat' in df.columns:
+        df.drop(columns=['attack_cat'], inplace=True)
 
     # Encode categoricals
     for col in df.select_dtypes(include='object').columns:
