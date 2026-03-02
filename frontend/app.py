@@ -63,7 +63,7 @@ dataset_name = st.sidebar.selectbox(
 
 # Model Selection Dropdown
 # Filter available models based on dataset
-available_models = list(utils.DATASET_CONFIG[dataset_name]["models"].keys())
+available_models = list(utils.DATASET_CONFIG[dataset_name]["model_files"].keys())
 model_type = st.sidebar.selectbox("Select Model", available_models)
 
 st.sidebar.info(
