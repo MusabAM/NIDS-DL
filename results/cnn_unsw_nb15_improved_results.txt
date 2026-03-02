@@ -1,0 +1,18 @@
+Dataset: UNSW-NB15
+Model: CNN (Improved - Class Weights + Threshold Tuning)
+Best Val Accuracy: 93.64%
+Test Accuracy: 94.23%
+Optimal Threshold: 0.35
+
+              precision    recall  f1-score   support
+
+      Normal       0.91      0.93      0.92      9300
+      Attack       0.96      0.95      0.95     16468
+
+    accuracy                           0.94     25768
+   macro avg       0.94      0.94      0.94     25768
+weighted avg       0.94      0.94      0.94     25768
+
+Confusion Matrix:
+TN: 8621 | FP: 679
+FN: 808 | TP: 15660

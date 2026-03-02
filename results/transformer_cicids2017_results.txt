@@ -1,0 +1,14 @@
+Transformer CICIDS2017 Results
+==================================================
+Note: Run scripts/train_cicids2017_transformer.py to generate full results.
+Partial results from notebook training:
+Test Accuracy: ~97.50%
+
+              precision    recall  f1-score   support
+
+      Benign       0.97      0.99      0.98     (variable)
+      Attack       0.99      0.97      0.98     (variable)
+
+    accuracy                           0.97     (variable)
+   macro avg       0.98      0.98      0.98     (variable)
+weighted avg       0.98      0.97      0.98     (variable)

@@ -1,0 +1,18 @@
+Dataset: UNSW-NB15
+Model: Transformer (Improved - Class Weights + Pre-LN + Threshold Tuning)
+Best Val Accuracy: 93.06%
+Test Accuracy: 93.22%
+Optimal Threshold: 0.45
+
+              precision    recall  f1-score   support
+
+      Normal       0.89      0.92      0.91      9300
+      Attack       0.96      0.94      0.95     16468
+
+    accuracy                           0.93     25768
+   macro avg       0.92      0.93      0.93     25768
+weighted avg       0.93      0.93      0.93     25768
+
+Confusion Matrix:
+TN: 8576 | FP: 724
+FN: 1024 | TP: 15444

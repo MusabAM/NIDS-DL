@@ -1,0 +1,18 @@
+Dataset: NSL-KDD
+Model: BiLSTM (Improved - AdamW + Label Smoothing + Threshold Tuning)
+Best Val Accuracy: 99.63%
+Test Accuracy: 81.12%
+Optimal Threshold: 0.30
+
+              precision    recall  f1-score   support
+
+      Normal       0.70      0.97      0.82      9711
+      Attack       0.97      0.69      0.81     12833
+
+    accuracy                           0.81     22544
+   macro avg       0.84      0.83      0.81     22544
+weighted avg       0.86      0.81      0.81     22544
+
+Confusion Matrix:
+TN: 9457 | FP: 254
+FN: 4002 | TP: 8831

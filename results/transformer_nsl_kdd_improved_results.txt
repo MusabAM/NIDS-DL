@@ -1,0 +1,18 @@
+Dataset: NSL-KDD
+Model: Transformer (Improved - Pre-LN + Warmup + Label Smoothing)
+Best Val Accuracy: 99.47%
+Test Accuracy: 78.04%
+Optimal Threshold: 0.30
+
+              precision    recall  f1-score   support
+
+      Normal       0.67      0.97      0.79      9711
+      Attack       0.97      0.63      0.77     12833
+
+    accuracy                           0.78     22544
+   macro avg       0.82      0.80      0.78     22544
+weighted avg       0.84      0.78      0.78     22544
+
+Confusion Matrix:
+TN: 9461 | FP: 250
+FN: 4701 | TP: 8132
