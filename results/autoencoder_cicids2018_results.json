@@ -1,0 +1,13 @@
+{
+  "dataset": "CICIDS2018",
+  "model": "Autoencoder",
+  "optimal_threshold": 0.01928791217505932,
+  "roc_auc": 0.7768982291827023,
+  "accuracy": 0.8022267821154241,
+  "precision": 0.8447350693218576,
+  "recall": 0.805708109477694,
+  "f1_score": 0.8247601667909146,
+  "best_val_loss": 0.13178823637829704,
+  "input_dim": 76,
+  "encoding_dim": 16
+}
