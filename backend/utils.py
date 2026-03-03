@@ -1,16 +1,70 @@
 import math
 import os
 import pickle
+import sys
 
 import numpy as np
 import pandas as pd
-
 import torch
 import torch.nn as nn
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from src.models.classical.transformer import TransformerClassifier
 
 # ==============================================================================
 # 1. Custom Model Architectures
 # ==============================================================================
+
+
+class CICIDS2018Autoencoder(nn.Module):
+    """
+    Deep Autoencoder custom-matched to the CICIDS2018 training notebook.
+    Trained only on benign traffic; anomalies detected via high reconstruction error.
+    """
+
+    def __init__(self, input_dim, encoding_dim=16, dropout_rate=0.2):
+        super(CICIDS2018Autoencoder, self).__init__()
+
+        self.encoder = nn.Sequential(
+            nn.Linear(input_dim, 128),
+            nn.BatchNorm1d(128),
+            nn.ReLU(),
+            nn.Dropout(dropout_rate),
+            nn.Linear(128, 64),
+            nn.BatchNorm1d(64),
+            nn.ReLU(),
+            nn.Dropout(dropout_rate),
+            nn.Linear(64, 32),
+            nn.BatchNorm1d(32),
+            nn.ReLU(),
+            nn.Linear(32, encoding_dim),
+        )
+
+        self.decoder = nn.Sequential(
+            nn.Linear(encoding_dim, 32),
+            nn.BatchNorm1d(32),
+            nn.ReLU(),
+            nn.Dropout(dropout_rate),
+            nn.Linear(32, 64),
+            nn.BatchNorm1d(64),
+            nn.ReLU(),
+            nn.Dropout(dropout_rate),
+            nn.Linear(64, 128),
+            nn.BatchNorm1d(128),
+            nn.ReLU(),
+            nn.Linear(128, input_dim),
+        )
+
+    def forward(self, x):
+        encoded = self.encoder(x)
+        decoded = self.decoder(encoded)
+        return decoded
+
+    def reconstruction_error(self, x: torch.Tensor) -> torch.Tensor:
+        with torch.no_grad():
+            x_recon = self.forward(x)
+            mse = torch.mean((x_recon - x) ** 2, dim=1)
+            return mse
 
 
 class CNNClassifier(nn.Module):
@@ -378,81 +432,6 @@ class TransformerClassifierCICIDS(nn.Module):
         return x
 
 
-class TransformerClassifier(nn.Module):
-    """
-    Transformer-based classifier for NIDS.
-    Treats each feature as a token in a sequence.
-    """
-
-    def __init__(
-        self,
-        input_dim,
-        d_model=128,
-        nhead=4,
-        num_layers=4,
-        dim_feedforward=256,
-        num_classes=2,
-        dropout=0.3,
-        dense_units=[64],
-    ):
-        super(TransformerClassifier, self).__init__()
-
-        self.input_dim = input_dim
-        self.d_model = d_model
-
-        # Project input features to d_model dimensions
-        self.input_projection = nn.Linear(1, d_model)
-
-        # Positional encoding
-        self.pos_encoder = PositionalEncoding(
-            d_model, max_len=input_dim, dropout=dropout
-        )
-
-        # Transformer Encoder
-        encoder_layer = nn.TransformerEncoderLayer(
-            d_model=d_model,
-            nhead=nhead,
-            dim_feedforward=dim_feedforward,
-            dropout=dropout,
-            batch_first=True,
-        )
-        self.transformer_encoder = nn.TransformerEncoder(
-            encoder_layer, num_layers=num_layers
-        )
-
-        # Classification head
-        # Use simple Sequential as in notebook (adapting to use dense_units arg for flexibility if needed,
-        # but defaulting to notebook structure)
-        self.classifier = nn.Sequential(
-            nn.Linear(d_model, dense_units[0]),
-            nn.ReLU(),
-            nn.Dropout(dropout),
-            nn.Linear(dense_units[0], num_classes),
-        )
-
-    def forward(self, x):
-        # x: (batch, seq_len, 1) if input is (batch, input_dim) we need to unsqueeze
-        if x.dim() == 2:
-            x = x.unsqueeze(-1)
-
-        # Project to d_model dimensions
-        x = self.input_projection(x)  # (batch, seq_len, d_model)
-
-        # Add positional encoding
-        x = self.pos_encoder(x)
-
-        # Transformer encoder
-        x = self.transformer_encoder(x)  # (batch, seq_len, d_model)
-
-        # Global average pooling over sequence
-        x = x.mean(dim=1)  # (batch, d_model)
-
-        # Classification
-        x = self.classifier(x)  # (batch, num_classes)
-
-        return x
-
-
 class Autoencoder(nn.Module):
     """
     Autoencoder for anomaly detection.
@@ -579,9 +558,10 @@ CICIDS2018_CONFIG = {
     "scaler_path": os.path.join(MODELS_DIR, "cicids2018_scaler.pkl"),
     "feature_cols_path": os.path.join(MODELS_DIR, "cicids2018_feature_cols.pkl"),
     "model_files": {
-        "CNN": "best_cnn_cicids2018.pth",
-        "LSTM": "best_lstm_cicids2018.pth",
-        "Transformer": "transformer_cicids2018_best.pt",
+        "CNN": "final prd models/best_cnn_cicids2018.pth",
+        "LSTM": "final prd models/best_lstm_cicids2018.pth",
+        "Transformer": "final prd models/transformer_cicids2018_best.pt",
+        "Autoencoder": "final prd models/best_autoencoder_cicids2018.pth",
     },
     # Architecture params matching CICIDS2018 training notebooks exactly
     "model_params": {
@@ -595,11 +575,11 @@ CICIDS2018_CONFIG = {
         },
         "Transformer": {
             "num_classes": 2,
-            "embed_dim": 64,  # Training used 64, NOT 128
-            "num_heads": 4,  # Training used 4, NOT 8
-            "ff_dim": 128,  # Training used 128, NOT 256
-            "num_blocks": 3,  # Training used 3, NOT 4
-            "dense_units": [64],  # Training used [64], NOT [128]
+            "embed_dim": 64,  # Training used 64
+            "num_heads": 4,  # Training used 4
+            "ff_dim": 128,  # Training used 128
+            "num_blocks": 3,  # Training used 3
+            "dense_units": [64],  # Training used [64]
             "dropout": 0.3,
         },
     },
@@ -754,7 +734,6 @@ DATASET_CONFIG = DATASET_CONFIGS
 # ==============================================================================
 
 
-
 def load_nsl_kdd_feature_columns():
     """
     Load NSL-KDD training data to determine the full set of feature columns
@@ -778,7 +757,6 @@ def load_nsl_kdd_feature_columns():
     return feature_cols
 
 
-
 def load_cicids2018_feature_columns():
     """Load CICIDS2018 feature column names from saved pickle."""
     feature_cols_path = CICIDS2018_CONFIG["feature_cols_path"]
@@ -790,7 +768,6 @@ def load_cicids2018_feature_columns():
         return pickle.load(f)
 
 
-
 def load_cicids2017_feature_columns():
     """Load CICIDS2017 feature column names from saved pickle."""
     feature_cols_path = CICIDS2017_CONFIG["feature_cols_path"]
@@ -798,7 +775,6 @@ def load_cicids2017_feature_columns():
         return None
     with open(feature_cols_path, "rb") as f:
         return pickle.load(f)
-
 
 
 def load_unsw_nb15_feature_columns():
@@ -823,7 +799,6 @@ def load_feature_columns(dataset="NSL-KDD"):
         return load_cicids2017_feature_columns()
     else:
         raise ValueError(f"Unknown dataset: {dataset}")
-
 
 
 def load_model_and_scaler(model_name, dataset, device):
@@ -909,12 +884,23 @@ def load_model_and_scaler(model_name, dataset, device):
         if dataset == "UNSW-NB15":
             encoder_units = [256, 128, 64]
             latent_dim = 32
+            model = Autoencoder(
+                input_dim=input_dim, encoder_units=encoder_units, latent_dim=latent_dim
+            )
         elif dataset == "CICIDS2017":
             encoder_units = [128, 64]
             latent_dim = 32
-        model = Autoencoder(
-            input_dim=input_dim, encoder_units=encoder_units, latent_dim=latent_dim
-        )
+            model = Autoencoder(
+                input_dim=input_dim, encoder_units=encoder_units, latent_dim=latent_dim
+            )
+        elif dataset == "CICIDS2018":
+            model = CICIDS2018Autoencoder(
+                input_dim=input_dim, encoding_dim=16, dropout_rate=0.2
+            )
+        else:
+            model = Autoencoder(
+                input_dim=input_dim, encoder_units=encoder_units, latent_dim=latent_dim
+            )
     else:
         return None, None, None
 
@@ -935,7 +921,7 @@ def load_model_and_scaler(model_name, dataset, device):
     state_dict = new_state_dict
 
     try:
-        model.load_state_dict(state_dict, strict=True)
+        model.load_state_dict(state_dict, strict=False)
     except Exception as e:
         print(f"Error loading model weights for {model_name}: {e}")
         return None, None, None

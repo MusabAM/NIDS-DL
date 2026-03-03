@@ -3,33 +3,35 @@ import { predictLive } from '../services/api';
 import { AlertTriangle, CheckCircle, Loader2 } from 'lucide-react';
 
 const LivePrediction = ({ systemStatus }) => {
-    const [dataset, setDataset] = useState('NSL-KDD');
+    const [dataset] = useState('CICIDS2018'); // Locked to CICIDS2018
     const [modelType, setModelType] = useState('CNN');
     const [loading, setLoading] = useState(false);
     const [result, setResult] = useState(null);
     const [error, setError] = useState(null);
 
-    // NSL-KDD features state
+    // CICIDS2018 features state
     const [features, setFeatures] = useState({
-        duration: 0,
-        protocol_type: 'tcp',
-        service: 'http',
-        flag: 'SF',
-        src_bytes: 100,
-        dst_bytes: 0,
-        count: 1,
-        serror_rate: 0,
-        rerror_rate: 0,
-        same_srv_rate: 1.0,
+        'Flow Duration': 0,
+        'Tot Fwd Pkts': 1,
+        'Tot Bwd Pkts': 0,
+        'Fwd Pkt Len Mean': 100.0,
+        'Bwd Pkt Len Mean': 0.0,
+        'Flow Byts/s': 1000.0,
+        'Flow Pkts/s': 10.0,
+        'Flow IAT Mean': 0.0,
+        'Fwd IAT Mean': 0.0,
+        'Bwd IAT Mean': 0.0,
+        'Pkt Len Mean': 50.0,
+        'Down/Up Ratio': 0
     });
 
-    const availableModels = systemStatus?.models?.[dataset] || ['CNN'];
+    const availableModels = systemStatus?.models?.[dataset] || ['CNN', 'LSTM', 'Transformer', 'Autoencoder'];
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
         setFeatures(prev => ({
             ...prev,
-            [name]: ['protocol_type', 'service', 'flag'].includes(name) ? value : Number(value)
+            [name]: Number(value)
         }));
     };
 
@@ -39,24 +41,8 @@ const LivePrediction = ({ systemStatus }) => {
         setError(null);
         setResult(null);
 
-        // Build the full 41-feature dictionary mimicking the Streamlit app logic
-        const fullFeatures = {
-            ...features,
-            land: 0, wrong_fragment: 0, urgent: 0, hot: 0,
-            num_failed_logins: 0, logged_in: 1, num_compromised: 0,
-            root_shell: 0, su_attempted: 0, num_root: 0, num_file_creations: 0,
-            num_shells: 0, num_access_files: 0, num_outbound_cmds: 0,
-            is_host_login: 0, is_guest_login: 0, srv_count: features.count,
-            srv_serror_rate: features.serror_rate, srv_rerror_rate: features.rerror_rate,
-            diff_srv_rate: 0.0, srv_diff_host_rate: 0.0, dst_host_count: 1,
-            dst_host_srv_count: 1, dst_host_same_srv_rate: 1.0, dst_host_diff_srv_rate: 0.0,
-            dst_host_same_src_port_rate: 0.0, dst_host_srv_diff_host_rate: 0.0,
-            dst_host_serror_rate: features.serror_rate, dst_host_srv_serror_rate: features.serror_rate,
-            dst_host_rerror_rate: features.rerror_rate, dst_host_srv_rerror_rate: features.rerror_rate,
-        };
-
         try {
-            const data = await predictLive(dataset, modelType, fullFeatures);
+            const data = await predictLive(dataset, modelType, features);
             setResult(data);
         } catch (err) {
             setError(err.response?.data?.detail || 'Failed to connect to backend.');
@@ -76,9 +62,8 @@ const LivePrediction = ({ systemStatus }) => {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                     <div className="form-group">
                         <label className="form-label">Dataset Mode</label>
-                        <select className="form-control" value={dataset} onChange={(e) => setDataset(e.target.value)}>
-                            <option value="NSL-KDD">NSL-KDD</option>
-                            {/* Only implementing NSL-KDD form for simplicity in migration, as per Streamlit */}
+                        <select className="form-control" value={dataset} disabled>
+                            <option value="CICIDS2018">CICIDS2018</option>
                         </select>
                     </div>
                     <div className="form-group">
@@ -92,70 +77,59 @@ const LivePrediction = ({ systemStatus }) => {
 
             <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 2fr) minmax(0, 1fr)', gap: '2rem' }}>
                 <form className="glass-panel" onSubmit={submitPrediction}>
-                    <h3 style={{ marginBottom: '1.5rem' }}>Flow Characteristics</h3>
+                    <h3 style={{ marginBottom: '1.5rem' }}>Flow Characteristics (CICIDS2018)</h3>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
                         <div className="form-group">
-                            <label className="form-label">Duration</label>
-                            <input type="number" name="duration" className="form-control" value={features.duration} onChange={handleInputChange} />
+                            <label className="form-label">Flow Duration</label>
+                            <input type="number" name="Flow Duration" className="form-control" value={features['Flow Duration']} onChange={handleInputChange} />
+                        </div>
+                        <div className="form-group">
+                            <label className="form-label">Tot Fwd Pkts</label>
+                            <input type="number" name="Tot Fwd Pkts" className="form-control" value={features['Tot Fwd Pkts']} onChange={handleInputChange} />
+                        </div>
+                        <div className="form-group">
+                            <label className="form-label">Tot Bwd Pkts</label>
+                            <input type="number" name="Tot Bwd Pkts" className="form-control" value={features['Tot Bwd Pkts']} onChange={handleInputChange} />
                         </div>
 
                         <div className="form-group">
-                            <label className="form-label">Protocol</label>
-                            <select name="protocol_type" className="form-control" value={features.protocol_type} onChange={handleInputChange}>
-                                <option value="tcp">tcp</option>
-                                <option value="udp">udp</option>
-                                <option value="icmp">icmp</option>
-                            </select>
+                            <label className="form-label">Fwd Pkt Len Mean</label>
+                            <input type="number" step="0.1" name="Fwd Pkt Len Mean" className="form-control" value={features['Fwd Pkt Len Mean']} onChange={handleInputChange} />
+                        </div>
+                        <div className="form-group">
+                            <label className="form-label">Bwd Pkt Len Mean</label>
+                            <input type="number" step="0.1" name="Bwd Pkt Len Mean" className="form-control" value={features['Bwd Pkt Len Mean']} onChange={handleInputChange} />
+                        </div>
+                        <div className="form-group">
+                            <label className="form-label">Pkt Len Mean</label>
+                            <input type="number" step="0.1" name="Pkt Len Mean" className="form-control" value={features['Pkt Len Mean']} onChange={handleInputChange} />
                         </div>
 
                         <div className="form-group">
-                            <label className="form-label">Source Bytes</label>
-                            <input type="number" name="src_bytes" className="form-control" value={features.src_bytes} onChange={handleInputChange} />
+                            <label className="form-label">Flow Byts/s</label>
+                            <input type="number" step="0.1" name="Flow Byts/s" className="form-control" value={features['Flow Byts/s']} onChange={handleInputChange} />
+                        </div>
+                        <div className="form-group">
+                            <label className="form-label">Flow Pkts/s</label>
+                            <input type="number" step="0.1" name="Flow Pkts/s" className="form-control" value={features['Flow Pkts/s']} onChange={handleInputChange} />
+                        </div>
+                        <div className="form-group">
+                            <label className="form-label">Down/Up Ratio</label>
+                            <input type="number" step="0.1" name="Down/Up Ratio" className="form-control" value={features['Down/Up Ratio']} onChange={handleInputChange} />
                         </div>
 
                         <div className="form-group">
-                            <label className="form-label">Destination Bytes</label>
-                            <input type="number" name="dst_bytes" className="form-control" value={features.dst_bytes} onChange={handleInputChange} />
+                            <label className="form-label">Flow IAT Mean</label>
+                            <input type="number" step="0.1" name="Flow IAT Mean" className="form-control" value={features['Flow IAT Mean']} onChange={handleInputChange} />
                         </div>
-
                         <div className="form-group">
-                            <label className="form-label">Service</label>
-                            <select name="service" className="form-control" value={features.service} onChange={handleInputChange}>
-                                <option value="http">http</option>
-                                <option value="private">private</option>
-                                <option value="ftp_data">ftp_data</option>
-                                <option value="smtp">smtp</option>
-                                <option value="other">other</option>
-                            </select>
+                            <label className="form-label">Fwd IAT Mean</label>
+                            <input type="number" step="0.1" name="Fwd IAT Mean" className="form-control" value={features['Fwd IAT Mean']} onChange={handleInputChange} />
                         </div>
-
                         <div className="form-group">
-                            <label className="form-label">Flag</label>
-                            <select name="flag" className="form-control" value={features.flag} onChange={handleInputChange}>
-                                <option value="SF">SF</option>
-                                <option value="S0">S0</option>
-                                <option value="REJ">REJ</option>
-                                <option value="RSTR">RSTR</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <div style={{ marginTop: '1rem', paddingTop: '1rem', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-                        <h4 style={{ marginBottom: '1rem' }}>Advanced Features</h4>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem' }}>
-                            <div className="form-group">
-                                <label className="form-label">Count</label>
-                                <input type="number" name="count" className="form-control" value={features.count} onChange={handleInputChange} />
-                            </div>
-                            <div className="form-group">
-                                <label className="form-label">SYN Error Rate</label>
-                                <input type="number" step="0.1" max="1" min="0" name="serror_rate" className="form-control" value={features.serror_rate} onChange={handleInputChange} />
-                            </div>
-                            <div className="form-group">
-                                <label className="form-label">Same Srv Rate</label>
-                                <input type="number" step="0.1" max="1" min="0" name="same_srv_rate" className="form-control" value={features.same_srv_rate} onChange={handleInputChange} />
-                            </div>
+                            <label className="form-label">Bwd IAT Mean</label>
+                            <input type="number" step="0.1" name="Bwd IAT Mean" className="form-control" value={features['Bwd IAT Mean']} onChange={handleInputChange} />
                         </div>
                     </div>
 

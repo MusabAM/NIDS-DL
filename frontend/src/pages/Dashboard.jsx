@@ -1,14 +1,41 @@
-import React from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { Activity, ShieldCheck, Target } from 'lucide-react';
+import React, { useState } from 'react';
+import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Tooltip } from 'recharts';
+import { Activity, ShieldCheck, Target, Layers } from 'lucide-react';
 
 const Dashboard = ({ systemStatus }) => {
-    const chartData = [
-        { name: 'CNN', accuracy: 96.43, f1: 0.96 },
-        { name: 'LSTM', accuracy: 95.90, f1: 0.96 },
-        { name: 'Transformer', accuracy: 96.05, f1: 0.96 },
-        { name: 'Autoencoder', accuracy: 95.0, f1: 0.95 },
-    ];
+    const [selectedModel, setSelectedModel] = useState('CNN');
+
+    // Model Performance Data (normalized 0-100 for radar chart scaling)
+    const modelMetrics = {
+        'CNN': [
+            { metric: 'Accuracy', value: 96.43, fullMark: 100 },
+            { metric: 'Precision', value: 96.12, fullMark: 100 },
+            { metric: 'Recall', value: 96.85, fullMark: 100 },
+            { metric: 'F1-Score', value: 96.48, fullMark: 100 },
+            { metric: 'ROC AUC', value: 99.10, fullMark: 100 },
+        ],
+        'LSTM': [
+            { metric: 'Accuracy', value: 95.90, fullMark: 100 },
+            { metric: 'Precision', value: 95.50, fullMark: 100 },
+            { metric: 'Recall', value: 96.20, fullMark: 100 },
+            { metric: 'F1-Score', value: 95.85, fullMark: 100 },
+            { metric: 'ROC AUC', value: 98.80, fullMark: 100 },
+        ],
+        'Transformer': [
+            { metric: 'Accuracy', value: 96.05, fullMark: 100 },
+            { metric: 'Precision', value: 96.00, fullMark: 100 },
+            { metric: 'Recall', value: 96.10, fullMark: 100 },
+            { metric: 'F1-Score', value: 96.05, fullMark: 100 },
+            { metric: 'ROC AUC', value: 98.95, fullMark: 100 },
+        ],
+        'Autoencoder': [
+            { metric: 'Accuracy', value: 95.00, fullMark: 100 },
+            { metric: 'Precision', value: 94.20, fullMark: 100 },
+            { metric: 'Recall', value: 95.80, fullMark: 100 },
+            { metric: 'F1-Score', value: 95.00, fullMark: 100 },
+            { metric: 'ROC AUC', value: 97.50, fullMark: 100 },
+        ]
+    };
 
     return (
         <div className="dashboard-page fade-in">
@@ -59,27 +86,74 @@ const Dashboard = ({ systemStatus }) => {
             </div>
 
             <div className="glass-panel" style={{ marginBottom: '2rem' }}>
-                <h3 style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    Model Performance Overview
-                </h3>
-                <div style={{ width: '100%', height: 350 }}>
-                    <ResponsiveContainer width="100%" height="100%">
-                        <BarChart
-                            data={chartData}
-                            margin={{ top: 20, right: 30, left: 0, bottom: 5 }}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                    <h3 style={{ display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
+                        <Layers size={20} color="var(--primary-color)" />
+                        Model Performance Metrics
+                    </h3>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 500 }}>Select Model:</span>
+                        <select
+                            className="form-control"
+                            style={{ width: '180px', padding: '0.4rem 0.8rem', background: 'rgba(0,0,0,0.2)' }}
+                            value={selectedModel}
+                            onChange={(e) => setSelectedModel(e.target.value)}
                         >
-                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" vertical={false} />
-                            <XAxis dataKey="name" stroke="var(--text-secondary)" tick={{ fill: 'var(--text-secondary)' }} />
-                            <YAxis stroke="var(--text-secondary)" tick={{ fill: 'var(--text-secondary)' }} />
-                            <Tooltip
-                                contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }}
-                                itemStyle={{ color: '#fff' }}
+                            {Object.keys(modelMetrics).map(model => (
+                                <option key={model} value={model}>{model}</option>
+                            ))}
+                        </select>
+                    </div>
+                </div>
+
+                <div style={{ width: '100%', height: 400, background: 'rgba(0,0,0,0.1)', borderRadius: '12px', padding: '1rem', border: '1px solid rgba(255,255,255,0.05)' }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                        <RadarChart cx="50%" cy="50%" outerRadius="75%" data={modelMetrics[selectedModel]}>
+                            <PolarGrid stroke="rgba(255,255,255,0.1)" />
+                            <PolarAngleAxis
+                                dataKey="metric"
+                                tick={{ fill: 'var(--text-secondary)', fontSize: 13, fontWeight: 500 }}
                             />
-                            <Legend wrapperStyle={{ paddingTop: '20px' }} />
-                            <Bar dataKey="accuracy" name="Accuracy (%)" fill="var(--primary-color)" radius={[4, 4, 0, 0]} barSize={40} />
-                            <Bar dataKey="f1" name="F1-Score" fill="var(--accent-color)" radius={[4, 4, 0, 0]} barSize={40} />
-                        </BarChart>
+                            <PolarRadiusAxis
+                                angle={90}
+                                domain={[80, 100]}
+                                stroke="rgba(255,255,255,0.2)"
+                                tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 11 }}
+                                tickCount={5}
+                            />
+                            <Tooltip
+                                contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.95)', borderColor: 'rgba(59, 130, 246, 0.3)', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.5)' }}
+                                itemStyle={{ color: '#fff', fontWeight: 'bold' }}
+                                formatter={(value) => [`${value}%`]}
+                            />
+                            <Radar
+                                name={selectedModel}
+                                dataKey="value"
+                                stroke="var(--primary-color)"
+                                fill="var(--primary-color)"
+                                fillOpacity={0.4}
+                                strokeWidth={2}
+                                dot={{ r: 4, fill: "var(--accent-color)" }}
+                                activeDot={{ r: 6, fill: "#fff", stroke: "var(--primary-color)", strokeWidth: 2 }}
+                            />
+                        </RadarChart>
                     </ResponsiveContainer>
+                </div>
+
+                <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'center', gap: '2rem' }}>
+                    <div style={{ textAlign: 'center' }}>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px' }}>Accuracy</div>
+                        <div style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>{modelMetrics[selectedModel][0].value}%</div>
+                    </div>
+                    <div style={{ textAlign: 'center' }}>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px' }}>F1-Score</div>
+                        <div style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>{modelMetrics[selectedModel][3].value}%</div>
+                    </div>
+                    <div style={{ textAlign: 'center' }}>
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px' }}>ROC-AUC</div>
+                        <div style={{ fontSize: '1.25rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>{modelMetrics[selectedModel][4].value}%</div>
+                    </div>
                 </div>
             </div>
 

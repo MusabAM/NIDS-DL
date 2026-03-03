@@ -4,7 +4,7 @@ import { UploadCloud, FileText, Loader2, AlertCircle } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
 const BatchAnalysis = ({ systemStatus }) => {
-    const [dataset, setDataset] = useState('NSL-KDD');
+    const [dataset, setDataset] = useState('CICIDS2018');
     const [modelType, setModelType] = useState('CNN');
     const [file, setFile] = useState(null);
 
@@ -64,11 +64,8 @@ const BatchAnalysis = ({ systemStatus }) => {
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
                     <div className="form-group">
                         <label className="form-label">Dataset Mode</label>
-                        <select className="form-control" value={dataset} onChange={(e) => setDataset(e.target.value)}>
-                            <option value="NSL-KDD">NSL-KDD</option>
+                        <select className="form-control" value={dataset} disabled>
                             <option value="CICIDS2018">CICIDS2018</option>
-                            <option value="CICIDS2017">CICIDS2017</option>
-                            <option value="UNSW-NB15">UNSW-NB15</option>
                         </select>
                     </div>
 

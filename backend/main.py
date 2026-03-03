@@ -1,4 +1,6 @@
 import io
+import os
+import sys
 from typing import Any, Dict, List, Optional
 
 import pandas as pd
@@ -7,6 +9,8 @@ from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
+# Add the parent directory to sys.path so 'import backend.utils' works from anywhere
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import backend.utils as utils
 
 app = FastAPI(title="NIDS-DL Backend API")
@@ -119,6 +123,7 @@ async def predict_batch(
         with torch.no_grad():
             for i in range(0, len(X_scaled), batch_size):
                 X_batch = torch.FloatTensor(X_scaled[i : i + batch_size]).to(device)
+
                 if model_type == "Autoencoder":
                     losses = model.reconstruction_error(X_batch)
                     preds = (losses > 0.1).long()
