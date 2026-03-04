@@ -38,6 +38,12 @@ def get_status():
     }
 
 
+from datetime import datetime
+
+# In-memory buffer for real-time streaming visualization
+live_prediction_history = []
+
+
 class LivePredictionRequest(BaseModel):
     dataset_name: str
     model_type: str
@@ -74,15 +80,27 @@ def predict_live(request: LivePredictionRequest):
                 pred_class = torch.argmax(probs, dim=1).item()
                 confidence = probs[0][pred_class].item()
 
-        return {
+        result = {
             "prediction": "Attack" if pred_class == 1 else "Normal",
             "confidence": confidence,
             "metric_type": (
                 "Reconstruction Error" if model_type == "Autoencoder" else "Confidence"
             ),
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         }
+
+        live_prediction_history.insert(0, result)
+        if len(live_prediction_history) > 50:
+            live_prediction_history.pop()
+
+        return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.get("/api/predict/history")
+def get_prediction_history():
+    return {"history": live_prediction_history}
 
 
 @app.post("/api/predict/batch")

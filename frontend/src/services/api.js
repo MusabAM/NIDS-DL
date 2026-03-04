@@ -36,3 +36,8 @@ export const predictBatch = async (dataset_name, model_type, file) => {
     });
     return response.data;
 };
+
+export const getLiveHistory = async () => {
+    const response = await api.get('/predict/history');
+    return response.data;
+};
