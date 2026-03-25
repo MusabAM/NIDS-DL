@@ -41,3 +41,19 @@ export const getLiveHistory = async () => {
     const response = await api.get('/predict/history');
     return response.data;
 };
+
+export const startSniffer = async (model_type) => {
+    const response = await api.post('/sniffer/start', { model: model_type });
+    return response.data;
+};
+
+export const stopSniffer = async () => {
+    const response = await api.post('/sniffer/stop');
+    return response.data;
+};
+
+export const getSnifferStatus = async () => {
+    const response = await api.get('/sniffer/status');
+    return response.data;
+};
+

@@ -4,6 +4,7 @@ import { LayoutDashboard, Radio, FolderArchive, ShieldAlert } from 'lucide-react
 
 import Dashboard from './pages/Dashboard';
 import LivePrediction from './pages/LivePrediction';
+import EnsembleDefense from './pages/EnsembleDefense';
 import BatchAnalysis from './pages/BatchAnalysis';
 import { getSystemStatus } from './services/api';
 
@@ -11,7 +12,6 @@ const Sidebar = ({ systemStatus }) => {
   return (
     <div className="sidebar">
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '2rem' }}>
-        <ShieldAlert size={32} color="var(--primary-color)" />
         <h2 style={{ margin: 0 }}>NIDS-DL</h2>
       </div>
 
@@ -23,6 +23,10 @@ const Sidebar = ({ systemStatus }) => {
         <NavLink to="/live" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
           <Radio size={20} />
           Live Prediction
+        </NavLink>
+        <NavLink to="/ensemble" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
+          <ShieldAlert size={20} />
+          Ensemble Defense
         </NavLink>
         <NavLink to="/batch" className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}>
           <FolderArchive size={20} />
@@ -69,6 +73,7 @@ function App() {
           <Routes>
             <Route path="/" element={<Dashboard systemStatus={systemStatus} />} />
             <Route path="/live" element={<LivePrediction systemStatus={systemStatus} />} />
+            <Route path="/ensemble" element={<EnsembleDefense systemStatus={systemStatus} />} />
             <Route path="/batch" element={<BatchAnalysis systemStatus={systemStatus} />} />
           </Routes>
         </main>

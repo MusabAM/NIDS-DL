@@ -12,7 +12,9 @@ const BatchAnalysis = ({ systemStatus }) => {
     const [result, setResult] = useState(null);
     const [error, setError] = useState(null);
 
-    const availableModels = systemStatus?.models?.[dataset] || ['CNN'];
+    const availableModels = systemStatus?.models?.[dataset]
+        ? [...new Set([...systemStatus.models[dataset], 'Ensemble', 'Ensemble_Phase1'])]
+        : ['CNN', 'LSTM', 'Transformer', 'Autoencoder', 'Ensemble', 'Ensemble_Phase1'];
 
     const handleFileChange = (e) => {
         if (e.target.files && e.target.files[0]) {

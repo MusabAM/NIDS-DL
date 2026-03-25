@@ -79,7 +79,7 @@ def main():
         "-m",
         "--model",
         default="CNN",
-        help="Model to use for prediction (CNN, LSTM, Transformer, Autoencoder)",
+        help="Model to use for prediction (CNN, LSTM, Transformer, Autoencoder, Ensemble, Ensemble_Phase1)",
     )
     parser.add_argument(
         "-u",
