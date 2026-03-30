@@ -3,6 +3,32 @@ import { predictBatch } from '../services/api';
 import { UploadCloud, FileText, Loader2, AlertCircle } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
+const DATASET_OPTIONS = ['CICIDS2018', 'CICIDS2017', 'NSL-KDD', 'UNSW-NB15'];
+
+// Column display map per dataset for the results table
+const DATASET_TABLE_COLS = {
+    'CICIDS2018': [
+        { label: 'Source Bytes', key: 'Flow Byts/s' },
+        { label: 'Dest Bytes', key: 'Down/Up Ratio' },
+        { label: 'Protocol', key: 'Protocol' },
+    ],
+    'NSL-KDD': [
+        { label: 'Src Bytes', key: 'src_bytes' },
+        { label: 'Dst Bytes', key: 'dst_bytes' },
+        { label: 'Protocol', key: 'protocol_type' },
+    ],
+    'UNSW-NB15': [
+        { label: 'Src Bytes', key: 'sbytes' },
+        { label: 'Dst Bytes', key: 'dbytes' },
+        { label: 'Protocol', key: 'proto' },
+    ],
+    'CICIDS2017': [
+        { label: 'Src Packets', key: 'Total Fwd Packets' },
+        { label: 'Dst Packets', key: 'Total Backward Packets' },
+        { label: 'Flow Duration', key: 'Flow Duration' },
+    ],
+};
+
 const BatchAnalysis = ({ systemStatus }) => {
     const [dataset, setDataset] = useState('CICIDS2018');
     const [modelType, setModelType] = useState('CNN');
@@ -15,6 +41,15 @@ const BatchAnalysis = ({ systemStatus }) => {
     const availableModels = systemStatus?.models?.[dataset]
         ? [...new Set([...systemStatus.models[dataset], 'Ensemble', 'Ensemble_Phase1'])]
         : ['CNN', 'LSTM', 'Transformer', 'Autoencoder', 'Ensemble', 'Ensemble_Phase1'];
+
+    // Reset model and result when dataset changes
+    const handleDatasetChange = (e) => {
+        setDataset(e.target.value);
+        setModelType('CNN');
+        setResult(null);
+        setError(null);
+        setFile(null);
+    };
 
     const handleFileChange = (e) => {
         if (e.target.files && e.target.files[0]) {
@@ -55,6 +90,8 @@ const BatchAnalysis = ({ systemStatus }) => {
         { name: 'Attack Traffic', value: result.attacks }
     ] : [];
 
+    const tableCols = DATASET_TABLE_COLS[dataset] || DATASET_TABLE_COLS['CICIDS2018'];
+
     return (
         <div className="batch-analysis-page fade-in">
             <div style={{ marginBottom: '2rem' }}>
@@ -66,8 +103,10 @@ const BatchAnalysis = ({ systemStatus }) => {
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
                     <div className="form-group">
                         <label className="form-label">Dataset Mode</label>
-                        <select className="form-control" value={dataset} disabled>
-                            <option value="CICIDS2018">CICIDS2018</option>
+                        <select className="form-control" value={dataset} onChange={handleDatasetChange}>
+                            {DATASET_OPTIONS.map(d => (
+                                <option key={d} value={d}>{d}</option>
+                            ))}
                         </select>
                     </div>
 
@@ -78,13 +117,38 @@ const BatchAnalysis = ({ systemStatus }) => {
                         </select>
                     </div>
                 </div>
+
+                {dataset === 'NSL-KDD' && (
+                    <div style={{ marginTop: '0.75rem', padding: '0.75rem 1rem', background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.2)', borderRadius: '8px', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                        <strong style={{ color: 'var(--primary-color)' }}>NSL-KDD format:</strong>&nbsp;
+                        Upload a <code>.txt</code> or <code>.csv</code> file with the standard NSL-KDD 41-feature format (with or without headers). Categorical columns (<em>protocol_type</em>, <em>service</em>, <em>flag</em>) will be one-hot encoded automatically.
+                    </div>
+                )}
+                {dataset === 'CICIDS2018' && (
+                    <div style={{ marginTop: '0.75rem', padding: '0.75rem 1rem', background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)', borderRadius: '8px', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                        <strong style={{ color: 'var(--secondary-color)' }}>CICIDS2018 format:</strong>&nbsp;
+                        Upload a <code>.csv</code> file exported from CICFlowMeter with labeled headers. Metadata columns will be dropped automatically.
+                    </div>
+                )}
+                {dataset === 'UNSW-NB15' && (
+                    <div style={{ marginTop: '0.75rem', padding: '0.75rem 1rem', background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)', borderRadius: '8px', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                        <strong style={{ color: '#f59e0b' }}>UNSW-NB15 format:</strong>&nbsp;
+                        Upload a <code>.csv</code> file with standard UNSW-NB15 features.
+                    </div>
+                )}
+                {dataset === 'CICIDS2017' && (
+                    <div style={{ marginTop: '0.75rem', padding: '0.75rem 1rem', background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.2)', borderRadius: '8px', fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                        <strong style={{ color: '#3b82f6' }}>CICIDS2017 format:</strong>&nbsp;
+                        Upload a <code>.csv</code> file with standard CICIDS2017 features.
+                    </div>
+                )}
             </div>
 
             <div style={{ display: 'grid', gridTemplateColumns: result ? '1fr 1fr' : '1fr', gap: '2rem' }}>
 
                 {/* Upload Column */}
                 <div className="glass-panel" style={{ display: 'flex', flexDirection: 'column' }}>
-                    <h3 style={{ marginBottom: '1rem' }}>Upload PCAP/CSV</h3>
+                    <h3 style={{ marginBottom: '1rem' }}>Upload {dataset === 'NSL-KDD' ? 'TXT/CSV' : 'PCAP/CSV'}</h3>
 
                     <div
                         onDragOver={handleDragOver}
@@ -117,8 +181,8 @@ const BatchAnalysis = ({ systemStatus }) => {
                         ) : (
                             <>
                                 <UploadCloud size={48} color="var(--text-secondary)" style={{ marginBottom: '1rem' }} />
-                                <h4 style={{ marginBottom: '0.5rem' }}>Drag & drop file here</h4>
-                                <p style={{ fontSize: '0.85rem' }}>or click to browse (.csv format)</p>
+                                <h4 style={{ marginBottom: '0.5rem' }}>Drag &amp; drop file here</h4>
+                                <p style={{ fontSize: '0.85rem' }}>or click to browse (.csv / .txt format)</p>
                             </>
                         )}
                     </div>
@@ -197,9 +261,9 @@ const BatchAnalysis = ({ systemStatus }) => {
                                     <th style={{ padding: '12px 16px', color: 'var(--text-secondary)' }}>No.</th>
                                     <th style={{ padding: '12px 16px', color: 'var(--text-secondary)' }}>Prediction</th>
                                     <th style={{ padding: '12px 16px', color: 'var(--text-secondary)' }}>Confidence</th>
-                                    <th style={{ padding: '12px 16px', color: 'var(--text-secondary)' }}>Source Bytes</th>
-                                    <th style={{ padding: '12px 16px', color: 'var(--text-secondary)' }}>Dest Bytes</th>
-                                    <th style={{ padding: '12px 16px', color: 'var(--text-secondary)' }}>Protocol</th>
+                                    {tableCols.map(col => (
+                                        <th key={col.key} style={{ padding: '12px 16px', color: 'var(--text-secondary)' }}>{col.label}</th>
+                                    ))}
                                 </tr>
                             </thead>
                             <tbody>
@@ -216,9 +280,9 @@ const BatchAnalysis = ({ systemStatus }) => {
                                                 ? `${(row.Attack_Probability * 100).toFixed(2)}%`
                                                 : (row.Attack_Probability || 0).toFixed(4)}
                                         </td>
-                                        <td style={{ padding: '12px 16px' }}>{row.src_bytes !== undefined ? row.src_bytes : row['Flow Byts/s'] || '-'}</td>
-                                        <td style={{ padding: '12px 16px' }}>{row.dst_bytes !== undefined ? row.dst_bytes : row['Down/Up Ratio'] || '-'}</td>
-                                        <td style={{ padding: '12px 16px' }}>{row.protocol_type || '-'}</td>
+                                        {tableCols.map(col => (
+                                            <td key={col.key} style={{ padding: '12px 16px' }}>{row[col.key] ?? '-'}</td>
+                                        ))}
                                     </tr>
                                 ))}
                             </tbody>

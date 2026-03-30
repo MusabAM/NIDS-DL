@@ -2,20 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { predictLive, getLiveHistory } from '../services/api';
 import { AlertTriangle, CheckCircle, Loader2, Play, Square, Activity } from 'lucide-react';
 
-const EnsembleDefense = ({ systemStatus }) => {
-    const [dataset] = useState('CICIDS2018'); // Locked to CICIDS2018
-    const [loading, setLoading] = useState(false);
-    const [result, setResult] = useState(null);
-    const [error, setError] = useState(null);
-    const [mode, setMode] = useState('manual');
-    const [ensembleMode, setEnsembleMode] = useState('Ensemble');
-
-    // Streaming History State
-    const [isStreaming, setIsStreaming] = useState(false);
-    const [streamHistory, setStreamHistory] = useState([]);
-
-    // CICIDS2018 features state
-    const [features, setFeatures] = useState({
+// Feature templates per dataset
+const DATASET_FEATURES = {
+    'CICIDS2018': {
         'Flow Duration': 0,
         'Tot Fwd Pkts': 1,
         'Tot Bwd Pkts': 0,
@@ -27,8 +16,81 @@ const EnsembleDefense = ({ systemStatus }) => {
         'Fwd IAT Mean': 0.0,
         'Bwd IAT Mean': 0.0,
         'Pkt Len Mean': 50.0,
-        'Down/Up Ratio': 0
-    });
+        'Down/Up Ratio': 0,
+    },
+    'NSL-KDD': {
+        duration: 0,
+        src_bytes: 0,
+        dst_bytes: 0,
+        land: 0,
+        wrong_fragment: 0,
+        urgent: 0,
+        hot: 0,
+        num_failed_logins: 0,
+        logged_in: 0,
+        count: 1,
+        srv_count: 1,
+        serror_rate: 0.0,
+        rerror_rate: 0.0,
+        same_srv_rate: 1.0,
+        diff_srv_rate: 0.0,
+        dst_host_count: 255,
+        dst_host_srv_count: 255,
+        dst_host_same_srv_rate: 1.0,
+        dst_host_diff_srv_rate: 0.0,
+        dst_host_serror_rate: 0.0,
+    },
+    'UNSW-NB15': {
+        dur: 0.0,
+        spkts: 1,
+        dpkts: 0,
+        sbytes: 100,
+        dbytes: 0,
+        rate: 10.0,
+        sttl: 254,
+        dttl: 0,
+        sload: 1000.0,
+        dload: 0.0,
+        sloss: 0,
+        dloss: 0,
+    },
+    'CICIDS2017': {
+        'Flow Duration': 0.0,
+        'Total Fwd Packets': 1,
+        'Total Backward Packets': 0,
+        'Total Length of Fwd Packets': 100,
+        'Total Length of Bwd Packets': 0,
+        'Fwd Packet Length Max': 50,
+        'Bwd Packet Length Max': 0,
+        'Flow Bytes/s': 10.0,
+        'Flow Packets/s': 1.0,
+        'Fwd IAT Mean': 0.0,
+        'Bwd IAT Mean': 0.0,
+        'Init_Win_bytes_forward': 255,
+    },
+};
+
+const EnsembleDefense = ({ systemStatus }) => {
+    const [dataset, setDataset] = useState('CICIDS2018');
+    const [loading, setLoading] = useState(false);
+    const [result, setResult] = useState(null);
+    const [error, setError] = useState(null);
+    const [mode, setMode] = useState('manual');
+    const [ensembleMode, setEnsembleMode] = useState('Ensemble');
+
+    // Streaming History State
+    const [isStreaming, setIsStreaming] = useState(false);
+    const [streamHistory, setStreamHistory] = useState([]);
+
+    // Dynamic features state
+    const [features, setFeatures] = useState(DATASET_FEATURES['CICIDS2018']);
+
+    // Swap features when dataset changes
+    useEffect(() => {
+        setFeatures({ ...DATASET_FEATURES[dataset] });
+        setResult(null);
+        setError(null);
+    }, [dataset]);
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
@@ -59,11 +121,6 @@ const EnsembleDefense = ({ systemStatus }) => {
                 try {
                     const data = await getLiveHistory();
                     if (data && data.history) {
-                        // Filter history to only show Ensemble results, if backend is mixing them up
-                        // Actually, if live_sniffer forces Ensemble, they will all be Ensemble.
-                        // For safety, let's just filter for metric_type === 'Ensemble' or similar?
-                        // Or we just display them all since this tab is just visualizing the stream.
-                        // We filter for isEnsemble
                         const ensembleHistory = data.history.filter(h => h.isEnsemble);
                         setStreamHistory(ensembleHistory);
                     }
@@ -75,12 +132,15 @@ const EnsembleDefense = ({ systemStatus }) => {
         return () => clearInterval(interval);
     }, [isStreaming]);
 
+    const featureEntries = Object.keys(features);
+    const numCols = featureEntries.length > 12 ? 4 : 3;
+
     return (
         <div className="live-prediction-page fade-in">
             <div style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <div>
                     <h2>Ensemble Defense</h2>
-                    <p>Live, concurrent multi-model analysis leveraging supervised & unsupervised checks.</p>
+                    <p>Live, concurrent multi-model analysis leveraging supervised &amp; unsupervised checks.</p>
                 </div>
                 <div style={{ display: 'flex', gap: '0.5rem', background: 'rgba(0,0,0,0.2)', padding: '0.5rem', borderRadius: '8px' }}>
                     <button
@@ -104,8 +164,11 @@ const EnsembleDefense = ({ systemStatus }) => {
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                     <div className="form-group">
                         <label className="form-label">Dataset Mode</label>
-                        <select className="form-control" value={dataset} disabled>
+                        <select className="form-control" value={dataset} onChange={(e) => setDataset(e.target.value)}>
                             <option value="CICIDS2018">CICIDS2018</option>
+                            <option value="CICIDS2017">CICIDS2017</option>
+                            <option value="NSL-KDD">NSL-KDD</option>
+                            <option value="UNSW-NB15">UNSW-NB15</option>
                         </select>
                     </div>
                     <div className="form-group">
@@ -121,60 +184,24 @@ const EnsembleDefense = ({ systemStatus }) => {
             {mode === 'manual' ? (
                 <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 2fr) minmax(0, 1fr)', gap: '2rem' }}>
                     <form className="glass-panel" onSubmit={submitPrediction}>
-                        <h3 style={{ marginBottom: '1.5rem' }}>Flow Characteristics (CICIDS2018)</h3>
+                        <h3 style={{ marginBottom: '1.5rem' }}>
+                            Flow Characteristics ({dataset})
+                        </h3>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
-                            <div className="form-group">
-                                <label className="form-label">Flow Duration</label>
-                                <input type="number" name="Flow Duration" className="form-control" value={features['Flow Duration']} onChange={handleInputChange} />
-                            </div>
-                            <div className="form-group">
-                                <label className="form-label">Tot Fwd Pkts</label>
-                                <input type="number" name="Tot Fwd Pkts" className="form-control" value={features['Tot Fwd Pkts']} onChange={handleInputChange} />
-                            </div>
-                            <div className="form-group">
-                                <label className="form-label">Tot Bwd Pkts</label>
-                                <input type="number" name="Tot Bwd Pkts" className="form-control" value={features['Tot Bwd Pkts']} onChange={handleInputChange} />
-                            </div>
-
-                            <div className="form-group">
-                                <label className="form-label">Fwd Pkt Len Mean</label>
-                                <input type="number" step="0.1" name="Fwd Pkt Len Mean" className="form-control" value={features['Fwd Pkt Len Mean']} onChange={handleInputChange} />
-                            </div>
-                            <div className="form-group">
-                                <label className="form-label">Bwd Pkt Len Mean</label>
-                                <input type="number" step="0.1" name="Bwd Pkt Len Mean" className="form-control" value={features['Bwd Pkt Len Mean']} onChange={handleInputChange} />
-                            </div>
-                            <div className="form-group">
-                                <label className="form-label">Pkt Len Mean</label>
-                                <input type="number" step="0.1" name="Pkt Len Mean" className="form-control" value={features['Pkt Len Mean']} onChange={handleInputChange} />
-                            </div>
-
-                            <div className="form-group">
-                                <label className="form-label">Flow Byts/s</label>
-                                <input type="number" step="0.1" name="Flow Byts/s" className="form-control" value={features['Flow Byts/s']} onChange={handleInputChange} />
-                            </div>
-                            <div className="form-group">
-                                <label className="form-label">Flow Pkts/s</label>
-                                <input type="number" step="0.1" name="Flow Pkts/s" className="form-control" value={features['Flow Pkts/s']} onChange={handleInputChange} />
-                            </div>
-                            <div className="form-group">
-                                <label className="form-label">Down/Up Ratio</label>
-                                <input type="number" step="0.1" name="Down/Up Ratio" className="form-control" value={features['Down/Up Ratio']} onChange={handleInputChange} />
-                            </div>
-
-                            <div className="form-group">
-                                <label className="form-label">Flow IAT Mean</label>
-                                <input type="number" step="0.1" name="Flow IAT Mean" className="form-control" value={features['Flow IAT Mean']} onChange={handleInputChange} />
-                            </div>
-                            <div className="form-group">
-                                <label className="form-label">Fwd IAT Mean</label>
-                                <input type="number" step="0.1" name="Fwd IAT Mean" className="form-control" value={features['Fwd IAT Mean']} onChange={handleInputChange} />
-                            </div>
-                            <div className="form-group">
-                                <label className="form-label">Bwd IAT Mean</label>
-                                <input type="number" step="0.1" name="Bwd IAT Mean" className="form-control" value={features['Bwd IAT Mean']} onChange={handleInputChange} />
-                            </div>
+                        <div style={{ display: 'grid', gridTemplateColumns: `repeat(${numCols}, 1fr)`, gap: '1rem' }}>
+                            {featureEntries.map((key) => (
+                                <div className="form-group" key={key}>
+                                    <label className="form-label" style={{ fontSize: '0.8rem' }}>{key}</label>
+                                    <input
+                                        type="number"
+                                        step="any"
+                                        name={key}
+                                        className="form-control"
+                                        value={features[key]}
+                                        onChange={handleInputChange}
+                                    />
+                                </div>
+                            ))}
                         </div>
 
                         <button type="submit" className="btn btn-primary" style={{ marginTop: '1.5rem', width: '100%' }} disabled={loading}>

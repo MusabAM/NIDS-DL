@@ -527,9 +527,10 @@ NSL_KDD_CONFIG = {
     "scaler_path": os.path.join(MODELS_DIR, "cnn_scaler.pkl"),
     "train_data_path": TRAIN_DATA_PATH,
     "model_files": {
-        "CNN": "cnn_nsl_kdd.pt",
-        "LSTM": "best_lstm_kdd.pt",
-        "Transformer": "transformer_nsl_kdd.pth",
+        "CNN": "final prd models/cnn_nsl_kdd.pt",
+        "LSTM": "final prd models/best_lstm_kdd.pt",
+        "Transformer": "final prd models/transformer_nsl_kdd.pth",
+        "Autoencoder": "final prd models/autoencoder_nsl_kdd.pt",
     },
     # Architecture params matching NSL-KDD training
     "model_params": {
@@ -550,6 +551,7 @@ NSL_KDD_CONFIG = {
             "dense_units": [128],
             "dropout": 0.1,
         },
+        "Autoencoder": {},
     },
 }
 
@@ -590,27 +592,31 @@ CICIDS2017_CONFIG = {
     "scaler_path": os.path.join(MODELS_DIR, "cicids2017_scaler.pkl"),
     "feature_cols_path": os.path.join(MODELS_DIR, "cicids2017_feature_cols.pkl"),
     "model_files": {
-        "LSTM": "best_lstm_cicids2017.pth",
-        "Transformer": "best_transformer_cicids2017.pth",
+        "CNN": "final prd models/best_cnn_cicids2017.pth",
+        "LSTM": "final prd models/best_lstm_cicids2017.pth",
+        "Transformer": "final prd models/best_transformer_cicids2017.pth",
+        "Autoencoder": "final prd models/best_autoencoder_cicids2017.pth",
     },
     # Architecture params matching our improved versions
     "model_params": {
+        "CNN": {"num_classes": 2, "dropout_rate": 0.3},
         "LSTM": {
             "num_classes": 2,
             "lstm_units": [128, 64],
-            "dense_units": [128, 64],
+            "dense_units": [64],
             "bidirectional": True,
             "dropout_rate": 0.3,
         },
         "Transformer": {
             "num_classes": 2,
-            "embed_dim": 128,
-            "num_heads": 8,
-            "ff_dim": 256,
-            "num_blocks": 4,
-            "dense_units": [128],
-            "dropout": 0.1,
+            "embed_dim": 64,
+            "num_heads": 4,
+            "ff_dim": 128,
+            "num_blocks": 3,
+            "dense_units": [64],
+            "dropout": 0.3,
         },
+        "Autoencoder": {},
     },
 }
 
@@ -697,10 +703,10 @@ UNSW_NB15_CONFIG = {
     "encoders_path": os.path.join(MODELS_DIR, "unsw_encoders.pkl"),
     "feature_cols_path": os.path.join(MODELS_DIR, "unsw_feature_cols.pkl"),
     "model_files": {
-        "CNN": "cnn_unsw_nb15.pt",
-        "LSTM": "best_lstm_unsw.pt",
-        "Transformer": "transformer_unsw.pt",
-        "Autoencoder": "autoencoder_unsw.pt",
+        "CNN": "final prd models/cnn_unsw_nb15.pt",
+        "LSTM": "final prd models/best_lstm_unsw.pt",
+        "Transformer": "final prd models/transformer_unsw.pt",
+        "Autoencoder": "final prd models/autoencoder_unsw.pt",
     },
     "model_params": {
         "CNN": {"num_classes": 2},
@@ -791,8 +797,6 @@ def load_feature_columns(dataset="NSL-KDD"):
         return load_nsl_kdd_feature_columns()
     elif dataset == "UNSW-NB15":
         return load_unsw_nb15_feature_columns()
-    elif dataset == "UNSW-NB15":
-        return preprocess_unsw_nb15_input(df, scaler, feature_cols, encoders)
     elif dataset == "CICIDS2018":
         return load_cicids2018_feature_columns()
     elif dataset == "CICIDS2017":
@@ -1050,8 +1054,6 @@ def preprocess_input(df, scaler, feature_cols, encoders=None, dataset="NSL-KDD")
     """Preprocess input dataframe based on dataset type."""
     if dataset == "NSL-KDD":
         return preprocess_nsl_kdd_input(df, scaler, feature_cols)
-    elif dataset == "UNSW-NB15":
-        return load_unsw_nb15_feature_columns()
     elif dataset == "UNSW-NB15":
         return preprocess_unsw_nb15_input(df, scaler, feature_cols, encoders)
     elif dataset == "CICIDS2018":
