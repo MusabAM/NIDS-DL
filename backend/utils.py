@@ -10,6 +10,7 @@ import torch.nn as nn
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from src.models.classical.transformer import TransformerClassifier
+from src.models.classical.lstm import LSTMClassifier
 
 # ==============================================================================
 # 1. Custom Model Architectures
@@ -157,7 +158,7 @@ class LSTMClassifier(nn.Module):
         input_dim,
         num_classes=2,
         lstm_units=[128, 64],
-        dense_units=[128, 64],
+        dense_units=[128, 512],
         bidirectional=True,
         dropout_rate=0.3,
     ):
@@ -538,7 +539,7 @@ NSL_KDD_CONFIG = {
         "LSTM": {
             "num_classes": 2,
             "lstm_units": [128, 64],
-            "dense_units": [128, 64],
+            "dense_units": [128, 512],
             "bidirectional": True,
             "dropout_rate": 0.3,
         },
@@ -809,17 +810,17 @@ def load_model_and_scaler(model_name, dataset, device):
     """Load the trained model and scaler for the specified dataset."""
     config = DATASET_CONFIGS.get(dataset)
     if config is None:
-        return None, None
+        return None, None, None
 
     if model_name not in config["model_files"]:
-        return None, None
+        return None, None, None
 
     # Load model file
     model_path = os.path.join(MODELS_DIR, config["model_files"][model_name])
     if not os.path.exists(model_path):
         print(f"Model file not found: {model_path}")
-        return None, None
-
+        return None, None, None
+    
     # Load scaler
     scaler_path = config["scaler_path"]
     if not os.path.exists(scaler_path):
@@ -829,7 +830,7 @@ def load_model_and_scaler(model_name, dataset, device):
             if dataset == "CICIDS2018"
             else f"Scaler not found: {scaler_path}"
         )
-        return None, None
+        return None, None, None
 
     with open(scaler_path, "rb") as f:
         scaler = pickle.load(f)
