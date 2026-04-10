@@ -532,10 +532,10 @@ NSL_KDD_CONFIG = {
     "autoencoder_scaler_path": os.path.join(MODELS_DIR, "autoencoder_nsl_kdd_scaler.pkl"),
     "autoencoder_encoders_path": os.path.join(MODELS_DIR, "autoencoder_nsl_kdd_encoders.pkl"),
     "model_files": {
-        "CNN": "final prd models/cnn_nsl_kdd.pt",
-        "LSTM": "final prd models/best_lstm_kdd.pt",
-        "Transformer": "final prd models/transformer_nsl_kdd.pth",
-        "Autoencoder": "final prd models/autoencoder_nsl_kdd.pt",
+        "CNN": "final prd models/NSL-KDD/cnn_nsl_kdd.pt",
+        "LSTM": "final prd models/NSL-KDD/best_lstm_kdd.pt",
+        "Transformer": "final prd models/NSL-KDD/transformer_nsl_kdd.pth",
+        "Autoencoder": "final prd models/NSL-KDD/autoencoder_nsl_kdd.pt",
     },
     # Architecture params matching NSL-KDD training
     "model_params": {
@@ -565,10 +565,10 @@ CICIDS2018_CONFIG = {
     "scaler_path": os.path.join(MODELS_DIR, "cicids2018_scaler.pkl"),
     "feature_cols_path": os.path.join(MODELS_DIR, "cicids2018_feature_cols.pkl"),
     "model_files": {
-        "CNN": "final prd models/best_cnn_cicids2018.pth",
-        "LSTM": "final prd models/best_lstm_cicids2018.pth",
-        "Transformer": "final prd models/transformer_cicids2018_best.pt",
-        "Autoencoder": "final prd models/best_autoencoder_cicids2018.pth",
+        "CNN": "final prd models/CICIDS18/best_cnn_cicids2018.pth",
+        "LSTM": "final prd models/CICIDS18/best_lstm_cicids2018.pth",
+        "Transformer": "final prd models/CICIDS18/transformer_cicids2018_best.pt",
+        "Autoencoder": "final prd models/CICIDS18/best_autoencoder_cicids2018.pth",
     },
     # Architecture params matching CICIDS2018 training notebooks exactly
     "model_params": {
@@ -597,10 +597,10 @@ CICIDS2017_CONFIG = {
     "scaler_path": os.path.join(MODELS_DIR, "cicids2017_scaler.pkl"),
     "feature_cols_path": os.path.join(MODELS_DIR, "cicids2017_feature_cols.pkl"),
     "model_files": {
-        "CNN": "final prd models/best_cnn_cicids2017.pth",
-        "LSTM": "final prd models/best_lstm_cicids2017.pth",
-        "Transformer": "final prd models/best_transformer_cicids2017.pth",
-        "Autoencoder": "final prd models/best_autoencoder_cicids2017.pth",
+        "CNN": "final prd models/CICIDS17/best_cnn_cicids2017.pth",
+        "LSTM": "final prd models/CICIDS17/best_lstm_cicids2017.pth",
+        "Transformer": "final prd models/CICIDS17/best_transformer_cicids2017.pth",
+        "Autoencoder": "final prd models/CICIDS17/best_autoencoder_cicids2017.pth",
     },
     # Architecture params matching our improved versions
     "model_params": {
@@ -708,10 +708,10 @@ UNSW_NB15_CONFIG = {
     "encoders_path": os.path.join(MODELS_DIR, "unsw_encoders.pkl"),
     "feature_cols_path": os.path.join(MODELS_DIR, "unsw_feature_cols.pkl"),
     "model_files": {
-        "CNN": "final prd models/cnn_unsw_nb15.pt",
-        "LSTM": "final prd models/best_lstm_unsw.pt",
-        "Transformer": "final prd models/transformer_unsw.pt",
-        "Autoencoder": "final prd models/autoencoder_unsw.pt",
+        "CNN": "final prd models/UNSW/cnn_unsw_nb15.pt",
+        "LSTM": "final prd models/UNSW/best_lstm_unsw.pt",
+        "Transformer": "final prd models/UNSW/transformer_unsw.pt",
+        "Autoencoder": "final prd models/UNSW/autoencoder_unsw.pt",
     },
     "model_params": {
         "CNN": {"num_classes": 2},

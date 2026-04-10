@@ -1,0 +1,11 @@
+duration,protocol_type,service,flag,src_bytes,dst_bytes,land,wrong_fragment,urgent,hot,num_failed_logins,logged_in,num_compromised,root_shell,su_attempted,num_root,num_file_creations,num_shells,num_access_files,num_outbound_cmds,is_host_login,is_guest_login,count,srv_count,serror_rate,srv_serror_rate,rerror_rate,srv_rerror_rate,same_srv_rate,diff_srv_rate,srv_diff_host_rate,dst_host_count,dst_host_srv_count,dst_host_same_srv_rate,dst_host_diff_srv_rate,dst_host_same_src_port_rate,dst_host_srv_diff_host_rate,dst_host_serror_rate,dst_host_srv_serror_rate,dst_host_rerror_rate,dst_host_srv_rerror_rate,label,difficulty_level
+0,tcp,nnsp,REJ,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,144,15,0.0,0.0,1.0,1.0,0.1,0.06,0.0,255,14,0.05,0.06,0.0,0.0,0.0,0.0,1.0,1.0,neptune,20
+0,tcp,http,SF,306,3222,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,1,1,0.0,0.0,0.0,0.0,1.0,0.0,0.0,255,247,0.97,0.01,0.0,0.0,0.0,0.0,0.0,0.0,normal,21
+0,tcp,http,S0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,9,8,0.89,1.0,0.11,0.0,0.89,0.22,0.0,255,9,0.04,0.06,0.0,0.0,1.0,1.0,0.0,0.0,neptune,18
+0,tcp,ssh,S0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,31,12,1.0,1.0,0.0,0.0,0.39,0.13,0.0,255,12,0.05,0.08,0.0,0.0,1.0,1.0,0.0,0.0,neptune,19
+0,tcp,http,SF,303,29228,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,25,25,0.0,0.0,0.0,0.0,1.0,0.0,0.0,134,255,1.0,0.0,0.01,0.01,0.0,0.0,0.0,0.0,normal,21
+0,tcp,name,REJ,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,270,19,0.0,0.0,1.0,1.0,0.07,0.06,0.0,255,19,0.07,0.07,0.0,0.0,0.0,0.0,1.0,1.0,neptune,19
+0,udp,domain_u,SF,43,80,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,125,126,0.0,0.0,0.0,0.0,0.99,0.02,0.02,255,241,0.95,0.01,0.0,0.0,0.0,0.0,0.0,0.0,normal,18
+0,tcp,http,SF,210,1095,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,13,13,0.0,0.0,0.0,0.0,1.0,0.0,0.0,13,255,1.0,0.0,0.08,0.05,0.0,0.0,0.0,0.0,normal,21
+0,tcp,http,SF,347,5182,0,0,0,0,0,1,0,0,0,0,0,0,0,0,0,0,13,15,0.08,0.07,0.0,0.0,1.0,0.0,0.2,30,255,1.0,0.0,0.03,0.02,0.03,0.01,0.0,0.0,normal,21
+0,tcp,kshell,S0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,66,6,1.0,1.0,0.0,0.0,0.09,0.06,0.0,255,6,0.02,0.05,0.0,0.0,1.0,1.0,0.0,0.0,neptune,18

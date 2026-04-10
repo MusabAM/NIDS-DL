@@ -1,0 +1,16 @@
+{
+  "model": "Bidirectional LSTM",
+  "dataset": "NSL-KDD",
+  "test_accuracy": 0.8238555713271823,
+  "auc_roc": 0.9232655345500711,
+  "best_val_accuracy": 0.9961895689449869,
+  "total_params": 4292756,
+  "epochs_trained": 64,
+  "config": {
+    "batch_size": 512,
+    "epochs": 100,
+    "learning_rate": 0.0005,
+    "weight_decay": 0.0001,
+    "patience": 20
+  }
+}

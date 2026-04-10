@@ -1,0 +1,38 @@
+{
+  "model_type": "Hybrid Variational Quantum Classifier",
+  "dataset": "NSL-KDD",
+  "timestamp": "20260410_045232",
+  "quantum_config": {
+    "n_qubits": 8,
+    "n_quantum_layers": 4,
+    "quantum_device": "default.qubit"
+  },
+  "dimensionality_reduction": {
+    "method": "PCA",
+    "original_features": 118,
+    "reduced_features": 8,
+    "explained_variance": 0.2855431249908342
+  },
+  "training": {
+    "batch_size": 32,
+    "learning_rate": 0.001,
+    "epochs": 13,
+    "best_val_accuracy": 98.35,
+    "total_training_time_minutes": 274.9397548397382,
+    "avg_epoch_time_seconds": 1268.9527146449457
+  },
+  "test_performance": {
+    "accuracy": 77.59048970901348,
+    "roc_auc": 0.9415735378961774,
+    "confusion_matrix": [
+      [
+        9421,
+        290
+      ],
+      [
+        4762,
+        8071
+      ]
+    ]
+  }
+}
