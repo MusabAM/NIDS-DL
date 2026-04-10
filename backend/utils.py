@@ -527,6 +527,10 @@ TRAIN_DATA_PATH = os.path.join(BASE_DIR, "data", "raw", "nsl-kdd", "train.txt")
 NSL_KDD_CONFIG = {
     "scaler_path": os.path.join(MODELS_DIR, "cnn_scaler.pkl"),
     "train_data_path": TRAIN_DATA_PATH,
+    # The Autoencoder uses a separate scaler (41 label-encoded features)
+    # vs CNN/LSTM/Transformer which use one-hot encoded features (122 features).
+    "autoencoder_scaler_path": os.path.join(MODELS_DIR, "autoencoder_nsl_kdd_scaler.pkl"),
+    "autoencoder_encoders_path": os.path.join(MODELS_DIR, "autoencoder_nsl_kdd_encoders.pkl"),
     "model_files": {
         "CNN": "final prd models/cnn_nsl_kdd.pt",
         "LSTM": "final prd models/best_lstm_kdd.pt",
@@ -820,9 +824,14 @@ def load_model_and_scaler(model_name, dataset, device):
     if not os.path.exists(model_path):
         print(f"Model file not found: {model_path}")
         return None, None, None
-    
-    # Load scaler
-    scaler_path = config["scaler_path"]
+
+    # NSL-KDD Autoencoder uses a dedicated scaler (41 label-encoded features)
+    # instead of the shared CNN scaler (122 one-hot features).
+    if dataset == "NSL-KDD" and model_name == "Autoencoder":
+        scaler_path = config.get("autoencoder_scaler_path", config["scaler_path"])
+    else:
+        scaler_path = config["scaler_path"]
+
     if not os.path.exists(scaler_path):
         print(
             f"Scaler not found: {scaler_path}. "
@@ -836,7 +845,13 @@ def load_model_and_scaler(model_name, dataset, device):
         scaler = pickle.load(f)
 
     encoders = None
-    if "encoders_path" in config:
+    # NSL-KDD Autoencoder has its own label encoders for categorical features
+    if dataset == "NSL-KDD" and model_name == "Autoencoder":
+        ae_enc_path = config.get("autoencoder_encoders_path")
+        if ae_enc_path and os.path.exists(ae_enc_path):
+            with open(ae_enc_path, "rb") as f:
+                encoders = pickle.load(f)
+    elif "encoders_path" in config:
         if os.path.exists(config["encoders_path"]):
             with open(config["encoders_path"], "rb") as f:
                 encoders = pickle.load(f)
@@ -1051,9 +1066,48 @@ def preprocess_cicids2017_input(df, scaler, feature_cols=None):
     return X_scaled
 
 
-def preprocess_input(df, scaler, feature_cols, encoders=None, dataset="NSL-KDD"):
+def preprocess_nsl_kdd_autoencoder_input(df, scaler, encoders=None):
+    """
+    Preprocess NSL-KDD input for the Autoencoder model.
+    The Autoencoder uses 41 label-encoded features (NOT one-hot encoded).
+    """
+    categorical_cols = ["protocol_type", "service", "flag"]
+    
+    # The Autoencoder was trained on the first 41 features of NSL-KDD
+    feature_cols = NSL_KDD_COLUMNS[:41]
+
+    # Label-encode categorical columns
+    if encoders:
+        for col in categorical_cols:
+            if col in df.columns:
+                df[col] = df[col].astype(str)
+                df[col] = df[col].apply(
+                    lambda x: encoders[col].transform([x])[0]
+                    if x in encoders[col].classes_
+                    else 0
+                )
+    else:
+        # Fallback: simple numeric encoding
+        for col in categorical_cols:
+            if col in df.columns:
+                df[col] = pd.Categorical(df[col]).codes
+
+    # Align columns: fill missing with 0 and ensure correct order
+    for col in feature_cols:
+        if col not in df.columns:
+            df[col] = 0
+
+    # Ensure we use exactly the 41 features in the correct order
+    X = df[feature_cols].values.astype(np.float32)
+    X_scaled = scaler.transform(X)
+    return X_scaled
+
+
+def preprocess_input(df, scaler, feature_cols, encoders=None, dataset="NSL-KDD", model_type=None):
     """Preprocess input dataframe based on dataset type."""
-    if dataset == "NSL-KDD":
+    if dataset == "NSL-KDD" and model_type == "Autoencoder":
+        return preprocess_nsl_kdd_autoencoder_input(df, scaler, encoders)
+    elif dataset == "NSL-KDD":
         return preprocess_nsl_kdd_input(df, scaler, feature_cols)
     elif dataset == "UNSW-NB15":
         return preprocess_unsw_nb15_input(df, scaler, feature_cols, encoders)

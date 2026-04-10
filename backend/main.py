@@ -72,7 +72,7 @@ def predict_live(request: LivePredictionRequest):
                 if not model:
                     continue
                 X_scaled = utils.preprocess_input(
-                    df, scaler, feature_cols, None, dataset_name
+                    df.copy(), scaler, feature_cols, None, dataset_name, model_type=m_type
                 )
                 X_tensor = torch.FloatTensor(X_scaled).to(device)
                 with torch.no_grad():
@@ -102,7 +102,7 @@ def predict_live(request: LivePredictionRequest):
                 )
                 if model:
                     X_scaled = utils.preprocess_input(
-                        df, scaler, feature_cols, None, dataset_name
+                        df.copy(), scaler, feature_cols, encoders, dataset_name, model_type="Autoencoder"
                     )
                     X_tensor = torch.FloatTensor(X_scaled).to(device)
                     with torch.no_grad():
@@ -144,7 +144,7 @@ def predict_live(request: LivePredictionRequest):
                 raise HTTPException(status_code=500, detail="Failed to load model")
 
             X_scaled = utils.preprocess_input(
-                df, scaler, feature_cols, None, dataset_name
+                df.copy(), scaler, feature_cols, encoders, dataset_name, model_type=model_type
             )
             X_tensor = torch.FloatTensor(X_scaled).to(device)
 
@@ -267,7 +267,7 @@ async def predict_batch(
                 )
 
         X_scaled = utils.preprocess_input(
-            df, scaler, feature_cols, encoders, dataset_name
+            df.copy(), scaler, feature_cols, encoders, dataset_name, model_type=model_type
         )
 
         batch_size = 1000
