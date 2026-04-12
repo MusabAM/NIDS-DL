@@ -175,7 +175,7 @@ const EnsembleDefense = ({ systemStatus }) => {
                         <label className="form-label">Active Analysis Model</label>
                         <select className="form-control" value={ensembleMode} onChange={(e) => setEnsembleMode(e.target.value)}>
                             <option value="Ensemble">Ensemble (Phase 1 + 2)</option>
-                            <option value="Ensemble_Phase1">Ensemble (Phase 1 Only - CNN, LSTM, Transformers)</option>
+                            <option value="Ensemble_Phase1">Ensemble (Phase 1 Only - CNN, LSTM, Transformers, VQC)</option>
                         </select>
                     </div>
                 </div>
@@ -256,7 +256,7 @@ const EnsembleDefense = ({ systemStatus }) => {
                                         <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Ensemble Details</div>
                                         {result.phase1?.map((r, i) => (
                                             <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.75rem', background: 'rgba(0,0,0,0.2)', borderRadius: '6px', borderLeft: r.prediction === 'Attack' ? '3px solid var(--danger-color)' : '3px solid var(--secondary-color)' }}>
-                                                <span>{['CNN', 'LSTM', 'Transformer'][i]}</span>
+                                                <span>{r.model || ['CNN', 'LSTM', 'Transformer'][i]}</span>
                                                 <span style={{ color: r.prediction === 'Attack' ? 'var(--danger-color)' : 'var(--secondary-color)', fontWeight: 600 }}>{r.prediction.toUpperCase()}</span>
                                             </div>
                                         ))}
@@ -334,7 +334,7 @@ const EnsembleDefense = ({ systemStatus }) => {
                                     <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
                                         {item.phase1?.map((r, i) => (
                                             <span key={i} style={{ fontSize: '0.75rem', padding: '2px 6px', borderRadius: '4px', background: 'rgba(0,0,0,0.3)', color: r.prediction === 'Attack' ? 'var(--danger-color)' : 'var(--secondary-color)' }}>
-                                                {['CNN', 'LSTM', 'Transformer'][i]}: {r.prediction.toUpperCase()}
+                                                {r.model || ['CNN', 'LSTM', 'Transformer'][i]}: {r.prediction.toUpperCase()}
                                             </span>
                                         ))}
                                         {item.phase2 && (

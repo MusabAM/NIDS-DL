@@ -11,6 +11,7 @@ import torch.nn as nn
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from src.models.classical.transformer import TransformerClassifier
 from src.models.classical.lstm import LSTMClassifier
+from src.models.quantum.pennylane_models import HybridQuantumClassifier
 
 # ==============================================================================
 # 1. Custom Model Architectures
@@ -531,11 +532,13 @@ NSL_KDD_CONFIG = {
     # vs CNN/LSTM/Transformer which use one-hot encoded features (122 features).
     "autoencoder_scaler_path": os.path.join(MODELS_DIR, "autoencoder_nsl_kdd_scaler.pkl"),
     "autoencoder_encoders_path": os.path.join(MODELS_DIR, "autoencoder_nsl_kdd_encoders.pkl"),
+    "vqc_preprocessing_path": os.path.join(MODELS_DIR, "final prd models/NSL-KDD/vqc_preprocessing.pkl"),
     "model_files": {
         "CNN": "final prd models/NSL-KDD/cnn_nsl_kdd.pt",
         "LSTM": "final prd models/NSL-KDD/best_lstm_kdd.pt",
         "Transformer": "final prd models/NSL-KDD/transformer_nsl_kdd.pth",
         "Autoencoder": "final prd models/NSL-KDD/autoencoder_nsl_kdd.pt",
+        "VQC": "final prd models/NSL-KDD/vqc_hybrid_nsl_kdd.pt",
     },
     # Architecture params matching NSL-KDD training
     "model_params": {
@@ -829,6 +832,8 @@ def load_model_and_scaler(model_name, dataset, device):
     # instead of the shared CNN scaler (122 one-hot features).
     if dataset == "NSL-KDD" and model_name == "Autoencoder":
         scaler_path = config.get("autoencoder_scaler_path", config["scaler_path"])
+    elif dataset == "NSL-KDD" and model_name == "VQC":
+        scaler_path = config.get("vqc_preprocessing_path")
     else:
         scaler_path = config["scaler_path"]
 
@@ -842,7 +847,17 @@ def load_model_and_scaler(model_name, dataset, device):
         return None, None, None
 
     with open(scaler_path, "rb") as f:
-        scaler = pickle.load(f)
+        scaler_data = pickle.load(f)
+        if isinstance(scaler_data, dict) and "scaler" in scaler_data:
+            scaler = scaler_data["scaler"]
+            # Store PCA in the scaler object for later use in preprocessing
+            if "pca" in scaler_data:
+                scaler.pca_transformer = scaler_data["pca"]
+            # Store specific feature columns for VQC to ensure dimension matching
+            if "feature_cols" in scaler_data:
+                scaler.vqc_feature_cols = scaler_data["feature_cols"]
+        else:
+            scaler = scaler_data
 
     encoders = None
     # NSL-KDD Autoencoder has its own label encoders for categorical features
@@ -898,6 +913,25 @@ def load_model_and_scaler(model_name, dataset, device):
             model = TransformerClassifierCICIDS(input_dim=input_dim, **params)
         else:
             model = TransformerClassifier(input_dim=input_dim, **params)
+    elif model_name == "VQC":
+        # HybridQuantumClassifier requires specific quantum config from checkpoint
+        if isinstance(checkpoint, dict) and "model_config" in checkpoint:
+            m_cfg = checkpoint["model_config"]
+            model = HybridQuantumClassifier(
+                input_dim=m_cfg.get("input_dim", 8),
+                num_classes=m_cfg.get("num_classes", 2),
+                n_qubits=m_cfg.get("n_qubits", 8),
+                n_quantum_layers=m_cfg.get("n_quantum_layers", 4),
+                pre_layers=m_cfg.get("pre_layers", [64, 32]),
+                post_layers=m_cfg.get("post_layers", [32, 16]),
+                dropout=m_cfg.get("dropout", 0.2),
+                device=m_cfg.get("device", "default.qubit"),
+            )
+        else:
+            # Fallback to default NSL-KDD VQC architecture
+            model = HybridQuantumClassifier(
+                input_dim=8, num_classes=2, n_qubits=8, n_quantum_layers=4
+            )
     elif model_name == "Autoencoder":
         encoder_units = [64, 32, 16]
         latent_dim = 8
@@ -979,12 +1013,20 @@ def preprocess_nsl_kdd_input(df, scaler, feature_cols):
         df, columns=[c for c in categorical_cols if c in df.columns]
     )
 
-    for col in feature_cols:
+    # Use VQC-specific columns if available (118 features) 
+    # otherwise fallback to default NSL-KDD columns (122 features)
+    cols_to_use = getattr(scaler, "vqc_feature_cols", feature_cols)
+
+    for col in cols_to_use:
         if col not in encoded.columns:
             encoded[col] = 0
 
-    X = encoded[feature_cols].values
+    X = encoded[cols_to_use].values
     X_scaled = scaler.transform(X)
+
+    # Apply PCA for VQC model if available
+    if hasattr(scaler, "pca_transformer"):
+        X_scaled = scaler.pca_transformer.transform(X_scaled)
 
     return X_scaled
 

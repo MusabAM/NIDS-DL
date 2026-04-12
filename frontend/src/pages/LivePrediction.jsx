@@ -85,7 +85,7 @@ const LivePrediction = ({ systemStatus }) => {
     // Dynamic features state — resets when dataset changes
     const [features, setFeatures] = useState(DATASET_FEATURES['CICIDS2018']);
 
-    const availableModels = systemStatus?.models?.[dataset] || ['CNN', 'LSTM', 'Transformer', 'Autoencoder'];
+    const availableModels = systemStatus?.models?.[dataset] || ['CNN', 'LSTM', 'Transformer', 'Autoencoder', 'VQC'];
 
     // Swap features template when dataset changes
     useEffect(() => {

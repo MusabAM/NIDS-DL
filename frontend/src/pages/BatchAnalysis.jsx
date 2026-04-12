@@ -40,7 +40,7 @@ const BatchAnalysis = ({ systemStatus }) => {
 
     const availableModels = systemStatus?.models?.[dataset]
         ? [...new Set([...systemStatus.models[dataset], 'Ensemble', 'Ensemble_Phase1'])]
-        : ['CNN', 'LSTM', 'Transformer', 'Autoencoder', 'Ensemble', 'Ensemble_Phase1'];
+        : ['CNN', 'LSTM', 'Transformer', 'Autoencoder', 'VQC', 'Ensemble', 'Ensemble_Phase1'];
 
     // Reset model and result when dataset changes
     const handleDatasetChange = (e) => {

@@ -65,7 +65,11 @@ def predict_live(request: LivePredictionRequest):
             phase1_results = []
             phase1_preds = []
 
-            for m_type in ["CNN", "LSTM", "Transformer"]:
+            # Get available classifiers for Phase 1
+            available_models = utils.DATASET_CONFIGS.get(dataset_name, {}).get("model_files", {}).keys()
+            phase1_candidates = [m for m in ["CNN", "LSTM", "Transformer", "VQC"] if m in available_models]
+
+            for m_type in phase1_candidates:
                 model, scaler, encoders = utils.load_model_and_scaler(
                     m_type, dataset_name, device
                 )
@@ -85,6 +89,7 @@ def predict_live(request: LivePredictionRequest):
                 phase1_preds.append(prediction)
                 phase1_results.append(
                     {
+                        "model": m_type,
                         "prediction": prediction,
                         "confidence": confidence,
                         "metric_type": "Confidence",
@@ -92,7 +97,9 @@ def predict_live(request: LivePredictionRequest):
                 )
 
             attacks = phase1_preds.count("Attack")
-            finalPrediction = "Attack" if attacks >= 2 else "Normal"
+            # Majority vote (e.g., if 4 models, need 2+; if 3 models, need 2+)
+            threshold = (len(phase1_preds) + 1) // 2
+            finalPrediction = "Attack" if attacks >= threshold else "Normal"
             phase2_result = None
             zeroDayPossible = False
 
