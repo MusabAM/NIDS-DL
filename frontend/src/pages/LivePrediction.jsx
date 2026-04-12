@@ -8,8 +8,8 @@ const DATASET_FEATURES = {
         'Flow Duration': 0,
         'Tot Fwd Pkts': 1,
         'Tot Bwd Pkts': 0,
-        'Fwd Pkt Len Mean': 100.0,
-        'Bwd Pkt Len Mean': 0.0,
+        'Fwd Pkt Len Max': 100.0,
+        'Bwd Pkt Len Max': 0.0,
         'Flow Byts/s': 1000.0,
         'Flow Pkts/s': 10.0,
         'Flow IAT Mean': 0.0,
@@ -67,6 +67,12 @@ const DATASET_FEATURES = {
         'Fwd IAT Mean': 0.0,
         'Bwd IAT Mean': 0.0,
         'Init_Win_bytes_forward': 255,
+        'Init_Win_bytes_backward': 255,
+        'act_data_pkt_fwd': 1,
+        'min_seg_size_forward': 20,
+        'SYN Flag Count': 0,
+        'ACK Flag Count': 1,
+        'PSH Flag Count': 0,
     },
 };
 
@@ -93,7 +99,7 @@ const LivePrediction = ({ systemStatus }) => {
         setResult(null);
         setError(null);
         // Reset to CNN if the current model is not available for the new dataset
-        const models = systemStatus?.models?.[dataset] || ['CNN', 'LSTM', 'Transformer'];
+        const models = systemStatus?.models?.[dataset] || ['CNN', 'LSTM', 'Transformer', 'Autoencoder'];
         if (!models.includes(modelType)) {
             setModelType('CNN');
         }
@@ -101,7 +107,9 @@ const LivePrediction = ({ systemStatus }) => {
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-        setFeatures(prev => ({ ...prev, [name]: Number(value) }));
+        // Check if value is numeric or string (for categorical fields)
+        const parsedValue = (name === 'protocol_type' || name === 'service' || name === 'flag') ? value : Number(value);
+        setFeatures(prev => ({ ...prev, [name]: parsedValue }));
     };
 
     const submitPrediction = async (e) => {
@@ -206,15 +214,25 @@ const LivePrediction = ({ systemStatus }) => {
                         <div style={{ display: 'grid', gridTemplateColumns: `repeat(${numCols}, 1fr)`, gap: '1rem' }}>
                             {featureEntries.map((key) => (
                                 <div className="form-group" key={key}>
-                                    <label className="form-label" style={{ fontSize: '0.8rem' }}>{key}</label>
-                                    <input
-                                        type="number"
-                                        step="any"
-                                        name={key}
-                                        className="form-control"
-                                        value={features[key]}
-                                        onChange={handleInputChange}
-                                    />
+                                    <label className="form-label" style={{ fontSize: '0.8rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={key}>{key}</label>
+                                    {(key === 'protocol_type' || key === 'service' || key === 'flag') ? (
+                                        <input
+                                            type="text"
+                                            name={key}
+                                            className="form-control"
+                                            value={features[key]}
+                                            onChange={handleInputChange}
+                                        />
+                                    ) : (
+                                        <input
+                                            type="number"
+                                            step="any"
+                                            name={key}
+                                            className="form-control"
+                                            value={features[key]}
+                                            onChange={handleInputChange}
+                                        />
+                                    )}
                                 </div>
                             ))}
                         </div>
