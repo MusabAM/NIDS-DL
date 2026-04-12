@@ -9,8 +9,8 @@ import torch
 import torch.nn as nn
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from src.models.classical.transformer import TransformerClassifier
 from src.models.classical.lstm import LSTMClassifier
+from src.models.classical.transformer import TransformerClassifier
 from src.models.quantum.pennylane_models import HybridQuantumClassifier
 
 # ==============================================================================
@@ -526,13 +526,21 @@ TRAIN_DATA_PATH = os.path.join(BASE_DIR, "data", "raw", "nsl-kdd", "train.txt")
 
 # --- NSL-KDD Configuration ---
 NSL_KDD_CONFIG = {
-    "scaler_path": os.path.join(MODELS_DIR, "cnn_scaler.pkl"),
+    "scaler_path": os.path.join(
+        MODELS_DIR, "final prd models", "NSL-KDD", "cnn_scaler.pkl"
+    ),
     "train_data_path": TRAIN_DATA_PATH,
     # The Autoencoder uses a separate scaler (41 label-encoded features)
     # vs CNN/LSTM/Transformer which use one-hot encoded features (122 features).
-    "autoencoder_scaler_path": os.path.join(MODELS_DIR, "autoencoder_nsl_kdd_scaler.pkl"),
-    "autoencoder_encoders_path": os.path.join(MODELS_DIR, "autoencoder_nsl_kdd_encoders.pkl"),
-    "vqc_preprocessing_path": os.path.join(MODELS_DIR, "final prd models/NSL-KDD/vqc_preprocessing.pkl"),
+    "autoencoder_scaler_path": os.path.join(
+        MODELS_DIR, "final prd models", "NSL-KDD", "autoencoder_nsl_kdd_scaler.pkl"
+    ),
+    "autoencoder_encoders_path": os.path.join(
+        MODELS_DIR, "final prd models", "NSL-KDD", "autoencoder_nsl_kdd_encoders.pkl"
+    ),
+    "vqc_preprocessing_path": os.path.join(
+        MODELS_DIR, "final prd models", "NSL-KDD", "vqc_preprocessing.pkl"
+    ),
     "model_files": {
         "CNN": "final prd models/NSL-KDD/cnn_nsl_kdd.pt",
         "LSTM": "final prd models/NSL-KDD/best_lstm_kdd.pt",
@@ -540,7 +548,7 @@ NSL_KDD_CONFIG = {
         "Autoencoder": "final prd models/NSL-KDD/autoencoder_nsl_kdd.pt",
         "VQC": "final prd models/NSL-KDD/vqc_hybrid_nsl_kdd.pt",
     },
-    # Architecture params matching NSL-KDD training
+    "autoencoder_threshold": 0.5,
     "model_params": {
         "CNN": {"num_classes": 2},
         "LSTM": {
@@ -565,8 +573,12 @@ NSL_KDD_CONFIG = {
 
 # --- CICIDS2018 Configuration ---
 CICIDS2018_CONFIG = {
-    "scaler_path": os.path.join(MODELS_DIR, "cicids2018_scaler.pkl"),
-    "feature_cols_path": os.path.join(MODELS_DIR, "cicids2018_feature_cols.pkl"),
+    "scaler_path": os.path.join(
+        MODELS_DIR, "final prd models", "CICIDS18", "cicids2018_scaler.pkl"
+    ),
+    "feature_cols_path": os.path.join(
+        MODELS_DIR, "final prd models", "CICIDS18", "cicids2018_feature_cols.pkl"
+    ),
     "model_files": {
         "CNN": "final prd models/CICIDS18/best_cnn_cicids2018.pth",
         "LSTM": "final prd models/CICIDS18/best_lstm_cicids2018.pth",
@@ -597,8 +609,12 @@ CICIDS2018_CONFIG = {
 
 # --- CICIDS2017 Configuration ---
 CICIDS2017_CONFIG = {
-    "scaler_path": os.path.join(MODELS_DIR, "cicids2017_scaler.pkl"),
-    "feature_cols_path": os.path.join(MODELS_DIR, "cicids2017_feature_cols.pkl"),
+    "scaler_path": os.path.join(
+        MODELS_DIR, "final prd models", "CICIDS17", "cicids2017_scaler.pkl"
+    ),
+    "feature_cols_path": os.path.join(
+        MODELS_DIR, "final prd models", "CICIDS17", "cicids2017_feature_cols.pkl"
+    ),
     "model_files": {
         "CNN": "final prd models/CICIDS17/best_cnn_cicids2017.pth",
         "LSTM": "final prd models/CICIDS17/best_lstm_cicids2017.pth",
@@ -707,9 +723,15 @@ NSL_KDD_COLUMNS = [
 
 # Setup UNSW-NB15 config
 UNSW_NB15_CONFIG = {
-    "scaler_path": os.path.join(MODELS_DIR, "unsw_scaler.pkl"),
-    "encoders_path": os.path.join(MODELS_DIR, "unsw_encoders.pkl"),
-    "feature_cols_path": os.path.join(MODELS_DIR, "unsw_feature_cols.pkl"),
+    "scaler_path": os.path.join(
+        MODELS_DIR, "final prd models", "UNSW", "unsw_scaler.pkl"
+    ),
+    "encoders_path": os.path.join(
+        MODELS_DIR, "final prd models", "UNSW", "unsw_encoders.pkl"
+    ),
+    "feature_cols_path": os.path.join(
+        MODELS_DIR, "final prd models", "UNSW", "unsw_feature_cols.pkl"
+    ),
     "model_files": {
         "CNN": "final prd models/UNSW/cnn_unsw_nb15.pt",
         "LSTM": "final prd models/UNSW/best_lstm_unsw.pt",
@@ -1013,7 +1035,7 @@ def preprocess_nsl_kdd_input(df, scaler, feature_cols):
         df, columns=[c for c in categorical_cols if c in df.columns]
     )
 
-    # Use VQC-specific columns if available (118 features) 
+    # Use VQC-specific columns if available (118 features)
     # otherwise fallback to default NSL-KDD columns (122 features)
     cols_to_use = getattr(scaler, "vqc_feature_cols", feature_cols)
 
@@ -1114,7 +1136,7 @@ def preprocess_nsl_kdd_autoencoder_input(df, scaler, encoders=None):
     The Autoencoder uses 41 label-encoded features (NOT one-hot encoded).
     """
     categorical_cols = ["protocol_type", "service", "flag"]
-    
+
     # The Autoencoder was trained on the first 41 features of NSL-KDD
     feature_cols = NSL_KDD_COLUMNS[:41]
 
@@ -1124,9 +1146,11 @@ def preprocess_nsl_kdd_autoencoder_input(df, scaler, encoders=None):
             if col in df.columns:
                 df[col] = df[col].astype(str)
                 df[col] = df[col].apply(
-                    lambda x: encoders[col].transform([x])[0]
-                    if x in encoders[col].classes_
-                    else 0
+                    lambda x: (
+                        encoders[col].transform([x])[0]
+                        if x in encoders[col].classes_
+                        else 0
+                    )
                 )
     else:
         # Fallback: simple numeric encoding
@@ -1145,7 +1169,9 @@ def preprocess_nsl_kdd_autoencoder_input(df, scaler, encoders=None):
     return X_scaled
 
 
-def preprocess_input(df, scaler, feature_cols, encoders=None, dataset="NSL-KDD", model_type=None):
+def preprocess_input(
+    df, scaler, feature_cols, encoders=None, dataset="NSL-KDD", model_type=None
+):
     """Preprocess input dataframe based on dataset type."""
     if dataset == "NSL-KDD" and model_type == "Autoencoder":
         return preprocess_nsl_kdd_autoencoder_input(df, scaler, encoders)
