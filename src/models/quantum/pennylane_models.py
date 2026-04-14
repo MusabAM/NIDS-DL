@@ -32,6 +32,21 @@ def check_pennylane():
 
 
 # ==============================================================================
+# Helpers
+# ==============================================================================
+
+
+def get_best_diff_method(device_name: str) -> str:
+    """Determine the best differentiation method for a given PennyLane device."""
+    if "lightning" in device_name:
+        return "adjoint"
+    elif "default.qubit" in device_name:
+        return "backprop"
+    else:
+        return "parameter-shift"
+
+
+# ==============================================================================
 # Quantum Circuits
 # ==============================================================================
 
@@ -131,6 +146,7 @@ class QuantumClassifier(nn.Module):
         encoding: str = "angle",
         entangling: str = "strongly_entangling",
         device: str = "default.qubit",
+        diff_method: Optional[str] = None,
     ):
         """
         Initialize Quantum Classifier.
@@ -142,6 +158,7 @@ class QuantumClassifier(nn.Module):
             encoding: Feature encoding method ('angle' or 'amplitude')
             entangling: Entangling layer type ('basic' or 'strongly_entangling')
             device: PennyLane device to use
+            diff_method: Differentiation method ('backprop', 'adjoint', etc.)
         """
         check_pennylane()
         super().__init__()
@@ -152,6 +169,11 @@ class QuantumClassifier(nn.Module):
 
         # Create quantum device
         self.dev = qml.device(device, wires=n_qubits)
+
+        # Select diff method
+        if diff_method is None:
+            diff_method = get_best_diff_method(device)
+        self.diff_method = diff_method
 
         # Choose encoding method
         if encoding == "angle":
@@ -175,7 +197,7 @@ class QuantumClassifier(nn.Module):
         self.weights = nn.Parameter(torch.randn(weight_shape) * 0.1)
 
         # Create quantum node
-        @qml.qnode(self.dev, interface="torch", diff_method="backprop")
+        @qml.qnode(self.dev, interface="torch", diff_method=self.diff_method)
         def circuit(inputs, weights):
             # Encode classical data
             wires = list(range(self.n_qubits))
@@ -245,6 +267,7 @@ class HybridQuantumClassifier(nn.Module):
         post_layers: List[int] = [32, 16],
         dropout: float = 0.2,
         device: str = "default.qubit",
+        diff_method: Optional[str] = None,
     ):
         """
         Initialize Hybrid Quantum Classifier.
@@ -258,6 +281,7 @@ class HybridQuantumClassifier(nn.Module):
             post_layers: Units for classical postprocessing layers
             dropout: Dropout rate for classical layers
             device: PennyLane quantum device
+            diff_method: Differentiation method ('backprop', 'adjoint', etc.)
         """
         check_pennylane()
         super().__init__()
@@ -286,7 +310,11 @@ class HybridQuantumClassifier(nn.Module):
         # Quantum circuit
         dev = qml.device(device, wires=n_qubits)
 
-        @qml.qnode(dev, interface="torch", diff_method="backprop")
+        # Select diff method
+        if diff_method is None:
+            diff_method = get_best_diff_method(device)
+
+        @qml.qnode(dev, interface="torch", diff_method=diff_method)
         def quantum_circuit(inputs, weights):
             wires = list(range(n_qubits))
 
@@ -379,6 +407,7 @@ def create_quantum_layer(
     n_qubits: int,
     n_layers: int = 2,
     device: str = "default.qubit",
+    diff_method: Optional[str] = None,
 ) -> Callable:
     """
     Create a quantum layer that can be used in a classical neural network.
@@ -387,6 +416,7 @@ def create_quantum_layer(
         n_qubits: Number of qubits
         n_layers: Number of variational layers
         device: PennyLane device
+        diff_method: Differentiation method
 
     Returns:
         Quantum layer function
@@ -395,7 +425,10 @@ def create_quantum_layer(
 
     dev = qml.device(device, wires=n_qubits)
 
-    @qml.qnode(dev, interface="torch")
+    if diff_method is None:
+        diff_method = get_best_diff_method(device)
+
+    @qml.qnode(dev, interface="torch", diff_method=diff_method)
     def quantum_layer(inputs, weights):
         wires = list(range(n_qubits))
 
