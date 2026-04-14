@@ -115,7 +115,8 @@ def predict_live(request: LivePredictionRequest):
                     with torch.no_grad():
                         loss = model.reconstruction_error(X_tensor).item()
                         confidence = loss
-                        pred_class = 1 if loss > 0.1 else 0
+                        threshold = utils.DATASET_CONFIGS.get(dataset_name, {}).get("autoencoder_threshold", 0.1)
+                        pred_class = 1 if loss > threshold else 0
                         phase2_result = {
                             "prediction": "Attack" if pred_class == 1 else "Normal",
                             "confidence": loss,
@@ -159,7 +160,8 @@ def predict_live(request: LivePredictionRequest):
                 if model_type == "Autoencoder":
                     loss = model.reconstruction_error(X_tensor).item()
                     confidence = loss
-                    pred_class = 1 if loss > 0.1 else 0
+                    threshold = utils.DATASET_CONFIGS.get(dataset_name, {}).get("autoencoder_threshold", 0.1)
+                    pred_class = 1 if loss > threshold else 0
                 else:
                     outputs = model(X_tensor)
                     probs = torch.softmax(outputs, dim=1)
@@ -347,7 +349,8 @@ async def predict_batch(
                             loss = ae_model.reconstruction_error(
                                 X_batch[j].unsqueeze(0)
                             ).item()
-                            if loss > 0.1:
+                            threshold = utils.DATASET_CONFIGS.get(dataset_name, {}).get("autoencoder_threshold", 0.1)
+                            if loss > threshold:
                                 is_attack = True
                                 probs.append(loss)
 
@@ -359,7 +362,8 @@ async def predict_batch(
 
                     if model_type == "Autoencoder":
                         losses = model.reconstruction_error(X_batch)
-                        preds = (losses > 0.1).long()
+                        threshold = utils.DATASET_CONFIGS.get(dataset_name, {}).get("autoencoder_threshold", 0.1)
+                        preds = (losses > threshold).long()
                         all_preds.extend(preds.cpu().numpy().tolist())
                         all_probs.extend(losses.cpu().numpy().tolist())
                     else:

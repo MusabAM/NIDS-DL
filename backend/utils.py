@@ -366,10 +366,10 @@ class TransformerClassifierCICIDS(nn.Module):
     def __init__(
         self,
         input_dim,
-        d_model=128,
-        nhead=4,
-        num_layers=4,
-        dim_feedforward=256,
+        embed_dim=128,
+        num_heads=4,
+        num_blocks=4,
+        ff_dim=256,
         num_classes=2,
         dropout=0.3,
         dense_units=[64],
@@ -377,34 +377,29 @@ class TransformerClassifierCICIDS(nn.Module):
         super(TransformerClassifierCICIDS, self).__init__()
 
         self.input_dim = input_dim
-        self.d_model = d_model
+        self.d_model = embed_dim
 
         # Project input features (flat) to d_model dimensions
-        self.input_projection = nn.Linear(input_dim, d_model)
+        self.input_projection = nn.Linear(input_dim, embed_dim)
 
-        # Positional encoding (likely unused if seq_len=1, but might be present)
-        # Checkpoint lacks it, so we can omit or optionalize.
-        # Standard TransformerClassifier has it.
-        # But if strict=False, we can keep it or not.
-        # If we keep it, we need to ensure shape matches or it is ignored.
-        # Let's keep it for compatibility sake but know it's useless for seq_len=1.
-        self.pos_encoder = PositionalEncoding(d_model, max_len=10, dropout=dropout)
+        # Positional encoding
+        self.pos_encoder = PositionalEncoding(embed_dim, max_len=10, dropout=dropout)
 
         # Transformer Encoder
         encoder_layer = nn.TransformerEncoderLayer(
-            d_model=d_model,
-            nhead=nhead,
-            dim_feedforward=dim_feedforward,
+            d_model=embed_dim,
+            nhead=num_heads,
+            dim_feedforward=ff_dim,
             dropout=dropout,
             batch_first=True,
         )
         self.transformer_encoder = nn.TransformerEncoder(
-            encoder_layer, num_layers=num_layers
+            encoder_layer, num_layers=num_blocks
         )
 
         # Classification head
         self.classifier = nn.Sequential(
-            nn.Linear(d_model, dense_units[0]),
+            nn.Linear(embed_dim, dense_units[0]),
             nn.ReLU(),
             nn.Dropout(dropout),
             nn.Linear(dense_units[0], num_classes),
@@ -627,16 +622,16 @@ CICIDS2017_CONFIG = {
         "LSTM": {
             "num_classes": 2,
             "lstm_units": [128, 64],
-            "dense_units": [64],
+            "dense_units": [128, 64],
             "bidirectional": True,
             "dropout_rate": 0.3,
         },
         "Transformer": {
             "num_classes": 2,
-            "embed_dim": 64,
-            "num_heads": 4,
-            "ff_dim": 128,
-            "num_blocks": 3,
+            "embed_dim": 128,
+            "num_heads": 8,
+            "ff_dim": 512,
+            "num_blocks": 4,
             "dense_units": [64],
             "dropout": 0.3,
         },
@@ -999,7 +994,9 @@ def load_model_and_scaler(model_name, dataset, device):
     try:
         model.load_state_dict(state_dict, strict=False)
     except Exception as e:
-        print(f"Error loading model weights for {model_name}: {e}")
+        print(f"Error loading model weights for {model_name} in {dataset}: {e}")
+        import traceback
+        traceback.print_exc()
         return None, None, None
 
     model.to(device)
