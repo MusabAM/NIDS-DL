@@ -574,11 +574,15 @@ CICIDS2018_CONFIG = {
     "feature_cols_path": os.path.join(
         MODELS_DIR, "final prd models", "CICIDS18", "cicids2018_feature_cols.pkl"
     ),
+    "vqc_preprocessing_path": os.path.join(
+        MODELS_DIR, "final prd models", "CICIDS18", "vqc_preprocessing.pkl"
+    ),
     "model_files": {
         "CNN": "final prd models/CICIDS18/best_cnn_cicids2018.pth",
         "LSTM": "final prd models/CICIDS18/best_lstm_cicids2018.pth",
         "Transformer": "final prd models/CICIDS18/transformer_cicids2018_best.pt",
         "Autoencoder": "final prd models/CICIDS18/best_autoencoder_cicids2018.pth",
+        "VQC": "final prd models/CICIDS18/vqc_hybrid_cicids2018.pt",
     },
     # Architecture params matching CICIDS2018 training notebooks exactly
     "model_params": {
@@ -727,11 +731,15 @@ UNSW_NB15_CONFIG = {
     "feature_cols_path": os.path.join(
         MODELS_DIR, "final prd models", "UNSW", "unsw_feature_cols.pkl"
     ),
+    "vqc_preprocessing_path": os.path.join(
+        MODELS_DIR, "final prd models", "UNSW", "vqc_preprocessing.pkl"
+    ),
     "model_files": {
         "CNN": "final prd models/UNSW/cnn_unsw_nb15.pt",
         "LSTM": "final prd models/UNSW/best_lstm_unsw.pt",
         "Transformer": "final prd models/UNSW/transformer_unsw.pt",
         "Autoencoder": "final prd models/UNSW/autoencoder_unsw.pt",
+        "VQC": "final prd models/UNSW/vqc_hybrid_unsw.pt",
     },
     "model_params": {
         "CNN": {"num_classes": 2},
@@ -849,7 +857,7 @@ def load_model_and_scaler(model_name, dataset, device):
     # instead of the shared CNN scaler (122 one-hot features).
     if dataset == "NSL-KDD" and model_name == "Autoencoder":
         scaler_path = config.get("autoencoder_scaler_path", config["scaler_path"])
-    elif dataset == "NSL-KDD" and model_name == "VQC":
+    elif model_name == "VQC" and "vqc_preprocessing_path" in config:
         scaler_path = config.get("vqc_preprocessing_path")
     else:
         scaler_path = config["scaler_path"]
@@ -1016,7 +1024,12 @@ def preprocess_unsw_nb15_input(df, scaler, feature_cols, encoders=None):
         if col not in df.columns:
             df[col] = 0
     X = df[feature_cols].values
-    return scaler.transform(X)
+    X_scaled = scaler.transform(X)
+
+    if hasattr(scaler, "pca_transformer"):
+        X_scaled = scaler.pca_transformer.transform(X_scaled)
+
+    return X_scaled
 
 
 def preprocess_nsl_kdd_input(df, scaler, feature_cols):
@@ -1091,6 +1104,9 @@ def preprocess_cicids2018_input(df, scaler, feature_cols=None):
 
     X = X.astype(np.float32)
     X_scaled = scaler.transform(X)
+
+    if hasattr(scaler, "pca_transformer"):
+        X_scaled = scaler.pca_transformer.transform(X_scaled)
 
     return X_scaled
 
