@@ -42,8 +42,8 @@ export const getLiveHistory = async () => {
     return response.data;
 };
 
-export const startSniffer = async (model_type) => {
-    const response = await api.post('/sniffer/start', { model: model_type });
+export const startSniffer = async (model_type, dataset = 'CICIDS2018') => {
+    const response = await api.post('/sniffer/start', { model: model_type, dataset });
     return response.data;
 };
 

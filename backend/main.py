@@ -61,13 +61,14 @@ def predict_live(request: LivePredictionRequest):
         feature_cols = utils.load_feature_columns(dataset_name)
         df = pd.DataFrame([request.features])
 
-        if model_type in ["Ensemble", "Ensemble_Phase1"]:
+        ENSEMBLE_MODES = ["Ensemble", "Ensemble_Phase1", "Ensemble_AE", "Ensemble_VQC"]
+        if model_type in ENSEMBLE_MODES:
             phase1_results = []
             phase1_preds = []
 
-            # Get available classifiers for Phase 1
+            # Phase 1 is always CNN, LSTM, Transformer
             available_models = utils.DATASET_CONFIGS.get(dataset_name, {}).get("model_files", {}).keys()
-            phase1_candidates = [m for m in ["CNN", "LSTM", "Transformer", "VQC"] if m in available_models]
+            phase1_candidates = [m for m in ["CNN", "LSTM", "Transformer"] if m in available_models]
 
             for m_type in phase1_candidates:
                 model, scaler, encoders = utils.load_model_and_scaler(
@@ -97,38 +98,68 @@ def predict_live(request: LivePredictionRequest):
                 )
 
             attacks = phase1_preds.count("Attack")
-            # Majority vote (e.g., if 4 models, need 2+; if 3 models, need 2+)
-            threshold = (len(phase1_preds) + 1) // 2
-            finalPrediction = "Attack" if attacks >= threshold else "Normal"
-            phase2_result = None
+            # Majority vote (e.g., if 3 models, need 2+)
+            vote_threshold = (len(phase1_preds) + 1) // 2
+            finalPrediction = "Attack" if attacks >= vote_threshold else "Normal"
+            phase2_results = []
             zeroDayPossible = False
 
-            if finalPrediction == "Normal" and model_type == "Ensemble":
-                model, scaler, encoders = utils.load_model_and_scaler(
-                    "Autoencoder", dataset_name, device
-                )
-                if model:
-                    X_scaled = utils.preprocess_input(
-                        df.copy(), scaler, feature_cols, encoders, dataset_name, model_type="Autoencoder"
+            # Phase 2 runs only if Phase 1 says Normal
+            run_ae = model_type in ["Ensemble", "Ensemble_AE"]
+            run_vqc = model_type in ["Ensemble", "Ensemble_VQC"]
+
+            if finalPrediction == "Normal":
+                # Phase 2a: Autoencoder anomaly detection
+                if run_ae:
+                    ae_model, ae_scaler, ae_encoders = utils.load_model_and_scaler(
+                        "Autoencoder", dataset_name, device
                     )
-                    X_tensor = torch.FloatTensor(X_scaled).to(device)
-                    with torch.no_grad():
-                        loss = model.reconstruction_error(X_tensor).item()
-                        confidence = loss
-                        threshold = utils.DATASET_CONFIGS.get(dataset_name, {}).get("autoencoder_threshold", 0.1)
-                        pred_class = 1 if loss > threshold else 0
-                        phase2_result = {
-                            "prediction": "Attack" if pred_class == 1 else "Normal",
-                            "confidence": loss,
-                            "metric_type": "Reconstruction Error",
-                        }
-                        if pred_class == 1:
-                            zeroDayPossible = True
+                    if ae_model:
+                        X_scaled = utils.preprocess_input(
+                            df.copy(), ae_scaler, feature_cols, ae_encoders, dataset_name, model_type="Autoencoder"
+                        )
+                        X_tensor = torch.FloatTensor(X_scaled).to(device)
+                        with torch.no_grad():
+                            loss = ae_model.reconstruction_error(X_tensor).item()
+                            ae_threshold = utils.DATASET_CONFIGS.get(dataset_name, {}).get("autoencoder_threshold", 0.1)
+                            ae_pred = 1 if loss > ae_threshold else 0
+                            phase2_results.append({
+                                "model": "Autoencoder",
+                                "prediction": "Attack" if ae_pred == 1 else "Normal",
+                                "confidence": loss,
+                                "metric_type": "Reconstruction Error",
+                            })
+                            if ae_pred == 1:
+                                zeroDayPossible = True
+
+                # Phase 2b: VQC classification
+                if run_vqc and "VQC" in available_models:
+                    vqc_model, vqc_scaler, vqc_encoders = utils.load_model_and_scaler(
+                        "VQC", dataset_name, device
+                    )
+                    if vqc_model:
+                        X_scaled = utils.preprocess_input(
+                            df.copy(), vqc_scaler, feature_cols, None, dataset_name, model_type="VQC"
+                        )
+                        X_tensor = torch.FloatTensor(X_scaled).to(device)
+                        with torch.no_grad():
+                            outputs = vqc_model(X_tensor)
+                            vqc_probs = torch.softmax(outputs, dim=1)
+                            vqc_pred = torch.argmax(vqc_probs, dim=1).item()
+                            vqc_conf = vqc_probs[0][vqc_pred].item()
+                            phase2_results.append({
+                                "model": "VQC",
+                                "prediction": "Attack" if vqc_pred == 1 else "Normal",
+                                "confidence": vqc_conf,
+                                "metric_type": "Confidence",
+                            })
+                            if vqc_pred == 1:
+                                zeroDayPossible = True
 
             result = {
                 "isEnsemble": True,
                 "phase1": phase1_results,
-                "phase2": phase2_result,
+                "phase2": phase2_results if phase2_results else None,
                 "finalPrediction": finalPrediction,
                 "zeroDayPossible": zeroDayPossible,
                 "prediction": (
@@ -180,6 +211,8 @@ def predict_live(request: LivePredictionRequest):
                 "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             }
 
+        result["dataset_name"] = dataset_name
+        result["model_type"] = model_type
         live_prediction_history.insert(0, result)
         if len(live_prediction_history) > 50:
             live_prediction_history.pop()
@@ -196,6 +229,7 @@ def get_prediction_history():
 
 class SnifferStartRequest(BaseModel):
     model: str
+    dataset: str = "CICIDS2018"
 
 
 @app.post("/api/sniffer/start")
@@ -217,10 +251,10 @@ def start_sniffer(req: SnifferStartRequest):
         ):
             python_exe = os.path.join(project_root, "venv", "Scripts", "python.exe")
 
-        cmd = [python_exe, script_path, "--model", req.model]
+        cmd = [python_exe, script_path, "--model", req.model, "--dataset", req.dataset]
         sniffer_process = subprocess.Popen(cmd, cwd=project_root)
 
-        return {"status": "started", "model": req.model, "pid": sniffer_process.pid}
+        return {"status": "started", "model": req.model, "dataset": req.dataset, "pid": sniffer_process.pid}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to start sniffer: {e}")
 
@@ -253,8 +287,9 @@ async def predict_batch(
         contents = await file.read()
         df = pd.read_csv(io.BytesIO(contents))
 
+        ENSEMBLE_MODES = ["Ensemble", "Ensemble_Phase1", "Ensemble_AE", "Ensemble_VQC"]
         feature_cols = utils.load_feature_columns(dataset_name)
-        if model_type not in ["Ensemble", "Ensemble_Phase1"]:
+        if model_type not in ENSEMBLE_MODES:
             model, scaler, encoders = utils.load_model_and_scaler(
                 model_type, dataset_name, device
             )
@@ -284,26 +319,40 @@ async def predict_batch(
         all_probs = []
 
         with torch.no_grad():
-            if model_type in ["Ensemble", "Ensemble_Phase1"]:
-                # Load all phase 1 models
+            if model_type in ENSEMBLE_MODES:
+                # Load Phase 1 models (always CNN, LSTM, Transformer)
                 phase1_models = {}
                 for m_type in ["CNN", "LSTM", "Transformer"]:
                     m, _, _ = utils.load_model_and_scaler(m_type, dataset_name, device)
                     if m:
                         phase1_models[m_type] = m
 
-                # Load phase 2 model if full ensemble
+                # Load Phase 2 models based on ensemble mode
                 ae_model = None
-                if model_type == "Ensemble":
+                vqc_model = None
+                vqc_scaler = None
+                run_ae = model_type in ["Ensemble", "Ensemble_AE"]
+                run_vqc = model_type in ["Ensemble", "Ensemble_VQC"]
+
+                if run_ae:
                     ae_model, _, _ = utils.load_model_and_scaler(
                         "Autoencoder", dataset_name, device
+                    )
+                if run_vqc:
+                    vqc_model, vqc_scaler, _ = utils.load_model_and_scaler(
+                        "VQC", dataset_name, device
+                    )
+
+                # Pre-process VQC input separately (VQC needs PCA-reduced features)
+                X_scaled_vqc = None
+                if vqc_model is not None and vqc_scaler is not None:
+                    X_scaled_vqc = utils.preprocess_input(
+                        df.copy(), vqc_scaler, feature_cols, None,
+                        dataset_name, model_type="VQC"
                     )
 
                 for i in range(0, len(X_scaled), batch_size):
                     X_batch = torch.FloatTensor(X_scaled[i : i + batch_size]).to(device)
-
-                    batch_preds = []
-                    batch_probs_max = []
 
                     # Phase 1
                     cnn_outputs = (
@@ -321,6 +370,14 @@ async def predict_batch(
                         if "Transformer" in phase1_models
                         else None
                     )
+
+                    # VQC batch outputs for Phase 2 — uses its own PCA-reduced tensor
+                    vqc_outputs = None
+                    if vqc_model is not None and X_scaled_vqc is not None:
+                        X_vqc_batch = torch.FloatTensor(
+                            X_scaled_vqc[i : i + batch_size]
+                        ).to(device)
+                        vqc_outputs = vqc_model(X_vqc_batch)
 
                     # Iterate through the batch to vote
                     for j in range(len(X_batch)):
@@ -344,15 +401,24 @@ async def predict_batch(
 
                         is_attack = votes >= 2
 
-                        # Phase 2 (Autoencoder)
-                        if not is_attack and ae_model is not None:
-                            loss = ae_model.reconstruction_error(
-                                X_batch[j].unsqueeze(0)
-                            ).item()
-                            threshold = utils.DATASET_CONFIGS.get(dataset_name, {}).get("autoencoder_threshold", 0.1)
-                            if loss > threshold:
-                                is_attack = True
-                                probs.append(loss)
+                        # Phase 2: runs only if Phase 1 says Normal
+                        if not is_attack:
+                            # Phase 2a: Autoencoder
+                            if ae_model is not None:
+                                loss = ae_model.reconstruction_error(
+                                    X_batch[j].unsqueeze(0)
+                                ).item()
+                                ae_threshold = utils.DATASET_CONFIGS.get(dataset_name, {}).get("autoencoder_threshold", 0.1)
+                                if loss > ae_threshold:
+                                    is_attack = True
+                                    probs.append(loss)
+
+                            # Phase 2b: VQC (uses its own PCA-reduced output)
+                            if vqc_outputs is not None:
+                                vp = torch.softmax(vqc_outputs[j].unsqueeze(0), dim=1)
+                                if torch.argmax(vp, dim=1).item() == 1:
+                                    is_attack = True
+                                probs.append(vp[0][1].item())
 
                         all_preds.append(1 if is_attack else 0)
                         all_probs.append(max(probs) if probs else 0.0)

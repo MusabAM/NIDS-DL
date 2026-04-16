@@ -13,6 +13,24 @@
   --glass-border: rgba(255, 255, 255, 0.1);
   --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
   --card-radius: 16px;
+  --sidebar-bg: rgba(15, 23, 42, 0.6);
+}
+
+/* ── Light Theme ─────────────────────────────────────────── */
+[data-theme="light"] {
+  --bg-gradient-start: #eff6ff;
+  --bg-gradient-end: #f1f5f9;
+  --text-primary: #0f172a;
+  --text-secondary: #4b6e8f;
+  --glass-bg: rgba(255, 255, 255, 0.72);
+  --glass-border: rgba(15, 23, 42, 0.1);
+  --glass-shadow: 0 8px 32px 0 rgba(15, 23, 42, 0.1);
+  --sidebar-bg: rgba(226, 232, 240, 0.8);
+}
+
+/* Smooth theme transitions */
+body, .sidebar, .glass-panel, .form-control, .nav-link, .btn {
+  transition: background 0.25s ease, color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
 }
 
 * {
@@ -55,7 +73,7 @@ body {
 
 .sidebar {
   width: 280px;
-  background: rgba(15, 23, 42, 0.6);
+  background: var(--sidebar-bg);
   backdrop-filter: blur(20px);
   border-right: 1px solid var(--glass-border);
   padding: 2rem 1.5rem;

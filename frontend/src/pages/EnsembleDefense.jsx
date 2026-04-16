@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { predictLive, getLiveHistory } from '../services/api';
-import { AlertTriangle, CheckCircle, Loader2, Play, Square, Activity } from 'lucide-react';
+import { predictLive, getLiveHistory, startSniffer, stopSniffer } from '../services/api';
+import { AlertTriangle, CheckCircle, Loader2, Play, Square, Activity, Radio } from 'lucide-react';
 
 // Feature templates per dataset
 const DATASET_FEATURES = {
@@ -120,24 +120,34 @@ const EnsembleDefense = ({ systemStatus }) => {
         }
     };
 
-    // Auto-stream effect
+    // Auto-stream effect: start/stop sniffer and poll history
     useEffect(() => {
         let interval;
         if (isStreaming) {
+            // Start the backend sniffer process with current dataset + model
+            startSniffer(ensembleMode, dataset).catch((e) =>
+                console.error('Failed to start sniffer:', e)
+            );
             interval = setInterval(async () => {
                 try {
                     const data = await getLiveHistory();
                     if (data && data.history) {
-                        const ensembleHistory = data.history.filter(h => h.isEnsemble);
-                        setStreamHistory(ensembleHistory);
+                        // Filter by the currently selected dataset AND model_type
+                        const filtered = data.history.filter(
+                            (h) => h.dataset_name === dataset && h.model_type === ensembleMode
+                        );
+                        setStreamHistory(filtered);
                     }
                 } catch (e) {
-                    console.error("Stream polling error:", e);
+                    console.error('Stream polling error:', e);
                 }
             }, 1000);
+        } else {
+            // Stop the sniffer when the user clicks Stop
+            stopSniffer().catch(() => {});
         }
         return () => clearInterval(interval);
-    }, [isStreaming]);
+    }, [isStreaming, dataset, ensembleMode]);
 
     const featureEntries = Object.keys(features);
     const numCols = featureEntries.length > 12 ? 4 : 3;
@@ -181,8 +191,10 @@ const EnsembleDefense = ({ systemStatus }) => {
                     <div className="form-group">
                         <label className="form-label">Active Analysis Model</label>
                         <select className="form-control" value={ensembleMode} onChange={(e) => setEnsembleMode(e.target.value)}>
-                            <option value="Ensemble">🛡️ Full Ensemble (Phase 1 + 2 - Recommended)</option>
-                            <option value="Ensemble_Phase1">Supervised Ensemble (Phase 1 Only - Fast)</option>
+                            <option value="Ensemble">Full Ensemble (All Models - Recommended)</option>
+                            <option value="Ensemble_Phase1">Phase 1 Only (CNN + LSTM + Transformer)</option>
+                            <option value="Ensemble_AE">Phase 1 + Autoencoder (No VQC)</option>
+                            <option value="Ensemble_VQC">Phase 1 + VQC (No Autoencoder)</option>
                         </select>
                     </div>
                 </div>
@@ -259,7 +271,7 @@ const EnsembleDefense = ({ systemStatus }) => {
                                         <div style={{ background: 'rgba(234, 179, 8, 0.1)', border: '1px solid rgba(234, 179, 8, 0.3)', padding: '1.5rem 1rem', borderRadius: '12px', marginBottom: '1rem' }}>
                                             <AlertTriangle size={48} color="#eab308" style={{ marginBottom: '0.5rem' }} />
                                             <h3 style={{ color: '#eab308', margin: 0 }}>Possible Zero-Day</h3>
-                                            <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Phase 1 Normal, but Autoencoder flagged anomalous trace.</p>
+                                            <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Phase 1 Normal, but Phase 2 flagged anomalous trace.</p>
                                         </div>
                                     ) : (
                                         <div style={{ background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '1.5rem 1rem', borderRadius: '12px', marginBottom: '1rem' }}>
@@ -277,12 +289,12 @@ const EnsembleDefense = ({ systemStatus }) => {
                                                 <span style={{ color: r.prediction === 'Attack' ? 'var(--danger-color)' : 'var(--secondary-color)', fontWeight: 600 }}>{r.prediction.toUpperCase()}</span>
                                             </div>
                                         ))}
-                                        {result.phase2 && (
-                                            <div style={{ display: 'flex', justifyContent: 'space-between', padding: '0.75rem', background: 'rgba(0,0,0,0.2)', borderRadius: '6px', borderLeft: result.phase2.prediction === 'Attack' ? '3px solid #eab308' : '3px solid var(--secondary-color)', marginTop: '0.5rem' }}>
-                                                <span>Autoencoder</span>
-                                                <span style={{ color: result.phase2.prediction === 'Attack' ? '#eab308' : 'var(--secondary-color)', fontWeight: 600 }}>{result.phase2.prediction === 'Attack' ? 'ANOMALY' : 'NORMAL'}</span>
+                                        {result.phase2 && result.phase2.map((p2, i) => (
+                                            <div key={`p2-${i}`} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.75rem', background: 'rgba(0,0,0,0.2)', borderRadius: '6px', borderLeft: p2.prediction === 'Attack' ? '3px solid #eab308' : '3px solid var(--secondary-color)', marginTop: '0.5rem' }}>
+                                                <span>{p2.model} <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>(Phase 2)</span></span>
+                                                <span style={{ color: p2.prediction === 'Attack' ? '#eab308' : 'var(--secondary-color)', fontWeight: 600 }}>{p2.prediction === 'Attack' ? 'ANOMALY' : 'NORMAL'}</span>
                                             </div>
-                                        )}
+                                        ))}
                                     </div>
                                 </div>
                             )}
@@ -295,15 +307,32 @@ const EnsembleDefense = ({ systemStatus }) => {
                         <div>
                             <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
                                 <Activity size={20} color="var(--primary-color)" />
-                                Real-Time Sniffer Stream (Ensemble)
+                                Real-Time Sniffer Stream
                             </h3>
-                            <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
-                                Run <code style={{ color: '#fff', background: 'rgba(0,0,0,0.3)', padding: '2px 4px', borderRadius: '4px' }}>venv/Scripts/python scripts/live_sniffer.py --model Ensemble_Phase1</code> internally.
+                            <div style={{ marginTop: '6px', display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                                <span style={{ fontSize: '0.78rem', padding: '2px 8px', borderRadius: '4px', background: 'rgba(99,102,241,0.15)', color: 'var(--primary-color)', border: '1px solid rgba(99,102,241,0.3)' }}>
+                                    Dataset: {dataset}
+                                </span>
+                                <span style={{ fontSize: '0.78rem', padding: '2px 8px', borderRadius: '4px', background: 'rgba(16,185,129,0.1)', color: 'var(--secondary-color)', border: '1px solid rgba(16,185,129,0.2)' }}>
+                                    Model: {ensembleMode}
+                                </span>
+                                {isStreaming && (
+                                    <span style={{ fontSize: '0.78rem', padding: '2px 8px', borderRadius: '4px', background: 'rgba(239,68,68,0.1)', color: 'var(--danger-color)', border: '1px solid rgba(239,68,68,0.2)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                        <Radio size={10} /> Live
+                                    </span>
+                                )}
+                            </div>
+                            <p style={{ margin: '6px 0 0 0', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                                Packets are captured from the selected interface, features extracted, then submitted to the{' '}
+                                <code style={{ color: '#fff', background: 'rgba(0,0,0,0.3)', padding: '1px 4px', borderRadius: '3px' }}>{ensembleMode}</code>{' '}
+                                model using the{' '}
+                                <code style={{ color: '#fff', background: 'rgba(0,0,0,0.3)', padding: '1px 4px', borderRadius: '3px' }}>{dataset}</code>{' '}
+                                feature schema.
                             </p>
                         </div>
                         <button
                             className={`btn ${isStreaming ? 'btn-danger' : 'btn-success'}`}
-                            style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+                            style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}
                             onClick={() => setIsStreaming(!isStreaming)}
                         >
                             {isStreaming ? <><Square size={16} fill="currentColor" /> Stop Stream</> : <><Play size={16} fill="currentColor" /> Connect Stream</>}
@@ -313,14 +342,14 @@ const EnsembleDefense = ({ systemStatus }) => {
                     <div style={{ flex: 1, background: 'rgba(0,0,0,0.3)', borderRadius: '8px', padding: '1rem', overflowY: 'auto', maxHeight: '500px' }}>
                         {!isStreaming && streamHistory.length === 0 && (
                             <div style={{ height: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)' }}>
-                                Stream is paused. Click Connect to begin polling.
+                                Stream is paused. Click Connect to begin capturing live packets.
                             </div>
                         )}
 
                         {isStreaming && streamHistory.length === 0 && (
                             <div style={{ height: '300px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)' }}>
                                 <Loader2 size={32} className="animate-spin" style={{ marginBottom: '1rem', color: 'var(--primary-color)' }} />
-                                Listening for live Ensemble packets...
+                                Listening on {dataset} with {ensembleMode}... Generate some traffic!
                             </div>
                         )}
 
@@ -337,29 +366,68 @@ const EnsembleDefense = ({ systemStatus }) => {
                                 }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                                            {item.zeroDayPossible ? <AlertTriangle color="#eab308" size={20} /> : (item.prediction === 'Attack' ? <AlertTriangle color="var(--danger-color)" size={20} /> : <CheckCircle color="var(--secondary-color)" size={20} />)}
+                                            {item.zeroDayPossible
+                                                ? <AlertTriangle color="#eab308" size={20} />
+                                                : item.prediction === 'Attack'
+                                                    ? <AlertTriangle color="var(--danger-color)" size={20} />
+                                                    : <CheckCircle color="var(--secondary-color)" size={20} />
+                                            }
                                             <div>
                                                 <div style={{ fontWeight: 'bold', color: item.zeroDayPossible ? '#eab308' : (item.prediction === 'Attack' ? 'var(--danger-color)' : 'var(--secondary-color)') }}>
-                                                    {item.zeroDayPossible ? 'AE: POSSIBLE ZERO-DAY' : (item.prediction === 'Attack' ? 'ATTACK' : 'NORMAL')}
+                                                    {item.zeroDayPossible
+                                                        ? 'POSSIBLE ZERO-DAY'
+                                                        : item.prediction === 'Attack' ? 'ATTACK' : 'NORMAL'
+                                                    }
                                                 </div>
                                                 <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                                                    Flow Received @ {item.timestamp}
+                                                    Flow @ {item.timestamp}
+                                                    {item.metric_type && (
+                                                        <span style={{ marginLeft: '8px', opacity: 0.7 }}>— {item.metric_type}</span>
+                                                    )}
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
-                                    <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
-                                        {item.phase1?.map((r, i) => (
-                                            <span key={i} style={{ fontSize: '0.75rem', padding: '2px 6px', borderRadius: '4px', background: 'rgba(0,0,0,0.3)', color: r.prediction === 'Attack' ? 'var(--danger-color)' : 'var(--secondary-color)' }}>
-                                                {r.model || ['CNN', 'LSTM', 'Transformer'][i]}: {r.prediction.toUpperCase()}
+
+                                    {/* Phase 1 model badges (ensemble modes) */}
+                                    {item.phase1 && item.phase1.length > 0 && (
+                                        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.25rem' }}>
+                                            {item.phase1.map((r, i) => (
+                                                <span key={i} style={{ fontSize: '0.75rem', padding: '2px 6px', borderRadius: '4px', background: 'rgba(0,0,0,0.3)', color: r.prediction === 'Attack' ? 'var(--danger-color)' : 'var(--secondary-color)' }}>
+                                                    {r.model || ['CNN', 'LSTM', 'Transformer'][i]}: {r.prediction.toUpperCase()}
+                                                </span>
+                                            ))}
+                                            {item.phase2 && item.phase2.map((p2, pi) => (
+                                                <span key={`stream-p2-${pi}`} style={{ fontSize: '0.75rem', padding: '2px 6px', borderRadius: '4px', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(234,179,8,0.3)', color: p2.prediction === 'Attack' ? '#eab308' : 'var(--secondary-color)' }}>
+                                                    {p2.model} (P2): {p2.prediction === 'Attack' ? 'ANOMALY' : 'NORMAL'}
+                                                </span>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {/* Standalone model: show confidence bar */}
+                                    {!item.phase1 && (
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.25rem' }}>
+                                            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                                                {item.metric_type === 'Reconstruction Error' ? 'Recon. Error' : 'Confidence'}
                                             </span>
-                                        ))}
-                                        {item.phase2 && (
-                                            <span style={{ fontSize: '0.75rem', padding: '2px 6px', borderRadius: '4px', background: 'rgba(0,0,0,0.3)', color: item.phase2.prediction === 'Attack' ? '#eab308' : 'var(--secondary-color)' }}>
-                                                AE: {item.phase2.prediction === 'Attack' ? 'ANOMALY' : 'NORMAL'}
+                                            <div style={{ flex: 1, height: '4px', background: 'rgba(255,255,255,0.1)', borderRadius: '2px', overflow: 'hidden' }}>
+                                                <div style={{
+                                                    width: `${Math.min(item.confidence * 100, 100)}%`,
+                                                    height: '100%',
+                                                    background: item.prediction === 'Attack' ? 'var(--danger-color)' : 'var(--secondary-color)',
+                                                    borderRadius: '2px',
+                                                    transition: 'width 0.3s ease'
+                                                }} />
+                                            </div>
+                                            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', minWidth: '44px', textAlign: 'right' }}>
+                                                {item.confidence <= 1
+                                                    ? `${(item.confidence * 100).toFixed(1)}%`
+                                                    : item.confidence.toFixed(4)
+                                                }
                                             </span>
-                                        )}
-                                    </div>
+                                        </div>
+                                    )}
                                 </div>
                             ))}
                         </div>
