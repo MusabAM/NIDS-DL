@@ -57,3 +57,7 @@ export const getSnifferStatus = async () => {
     return response.data;
 };
 
+export const setDevice = async (deviceType) => {
+    const response = await api.post('/device', { device: deviceType });
+    return response.data;
+};

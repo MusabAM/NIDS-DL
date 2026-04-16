@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, NavLink } from 'react-router-dom';
-import { LayoutDashboard, Radio, FolderArchive, ShieldAlert, Sun, Moon } from 'lucide-react';
+import { LayoutDashboard, Radio, FolderArchive, ShieldAlert, Sun, Moon, Cpu, Zap } from 'lucide-react';
 
 import Dashboard from './pages/Dashboard';
 import LivePrediction from './pages/LivePrediction';
 import EnsembleDefense from './pages/EnsembleDefense';
 import BatchAnalysis from './pages/BatchAnalysis';
-import { getSystemStatus } from './services/api';
+import { getSystemStatus, setDevice } from './services/api';
 
-const Sidebar = ({ systemStatus, theme, onToggleTheme }) => {
+const Sidebar = ({ systemStatus, theme, onToggleTheme, onToggleDevice }) => {
+  const isGpu = systemStatus?.device === 'CUDA';
+  const cudaAvailable = systemStatus?.cuda_available;
+
   return (
     <div className="sidebar" style={{ background: 'var(--sidebar-bg)' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '2rem' }}>
@@ -35,45 +38,88 @@ const Sidebar = ({ systemStatus, theme, onToggleTheme }) => {
       </nav>
 
       <div className="glass-panel" style={{ padding: '1rem', marginTop: 'auto' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-          <h4 style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0, textTransform: 'uppercase' }}>System Status</h4>
-          {/* Theme toggle button */}
+
+        {/* ── Header row: title + theme toggle ────────────────── */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+          <h4 style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: 0, textTransform: 'uppercase' }}>
+            System Status
+          </h4>
           <button
+            id="theme-toggle-btn"
             onClick={onToggleTheme}
             title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '5px',
-              padding: '4px 10px',
-              borderRadius: '20px',
+              display: 'flex', alignItems: 'center', gap: '5px',
+              padding: '4px 10px', borderRadius: '20px',
               border: '1px solid var(--glass-border)',
               background: 'var(--glass-bg)',
               color: 'var(--text-secondary)',
-              cursor: 'pointer',
-              fontSize: '0.75rem',
-              fontWeight: 500,
-              fontFamily: 'inherit',
-              transition: 'all 0.2s ease',
+              cursor: 'pointer', fontSize: '0.75rem', fontWeight: 500,
+              fontFamily: 'inherit', transition: 'all 0.2s ease',
             }}
             onMouseEnter={e => { e.currentTarget.style.color = 'var(--text-primary)'; e.currentTarget.style.borderColor = 'var(--primary-color)'; }}
             onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-secondary)'; e.currentTarget.style.borderColor = 'var(--glass-border)'; }}
           >
-            {theme === 'dark'
-              ? <><Sun size={13} /> Light</>
-              : <><Moon size={13} /> Dark</>
-            }
+            {theme === 'dark' ? <><Sun size={13} /> Light</> : <><Moon size={13} /> Dark</>}
           </button>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-          <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: systemStatus ? '#10b981' : '#f59e0b' }} />
+
+        {/* ── Status dot + label ──────────────────────────────── */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
+          <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: systemStatus ? '#10b981' : '#f59e0b', flexShrink: 0 }} />
           <span style={{ fontSize: '0.9rem' }}>{systemStatus ? systemStatus.status : 'Connecting...'}</span>
         </div>
+
+        {/* ── Active device label ─────────────────────────────── */}
         {systemStatus && (
-          <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-            Device: <span style={{ color: 'var(--text-primary)' }}>{systemStatus.device}</span>
+          <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '0.75rem' }}>
+            Device:{' '}
+            <span style={{ color: isGpu ? 'var(--secondary-color)' : 'var(--text-primary)', fontWeight: 600 }}>
+              {systemStatus.device}
+            </span>
           </div>
         )}
+
+        {/* ── GPU / CPU toggle button ─────────────────────────── */}
+        <button
+          id="device-toggle-btn"
+          onClick={onToggleDevice}
+          disabled={!cudaAvailable}
+          title={
+            !cudaAvailable
+              ? 'CUDA not available — restart backend with venv python to enable GPU'
+              : isGpu
+                ? 'Switch inference to CPU'
+                : 'Switch inference to GPU (CUDA)'
+          }
+          style={{
+            width: '100%',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '7px',
+            padding: '8px 12px', borderRadius: '8px',
+            border: `1px solid ${isGpu ? 'rgba(16,185,129,0.45)' : 'rgba(99,102,241,0.45)'}`,
+            background: isGpu ? 'rgba(16,185,129,0.12)' : 'rgba(99,102,241,0.12)',
+            color: isGpu ? 'var(--secondary-color)' : 'var(--primary-color)',
+            cursor: cudaAvailable ? 'pointer' : 'not-allowed',
+            opacity: cudaAvailable ? 1 : 0.4,
+            fontSize: '0.8rem', fontWeight: 600,
+            fontFamily: 'inherit', transition: 'all 0.25s ease',
+          }}
+        >
+          {isGpu
+            ? <><Zap size={14} fill="currentColor" /> GPU Active &mdash; Switch to CPU</>
+            : <><Cpu size={14} /> CPU Active &mdash; Switch to GPU</>
+          }
+        </button>
+
+        {/* ── Hint when CUDA not available ───────────────────── */}
+        {systemStatus && !cudaAvailable && (
+          <p style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', margin: '6px 0 0 0', textAlign: 'center', opacity: 0.65, lineHeight: 1.4 }}>
+            Restart the backend with<br />
+            <code style={{ background: 'rgba(0,0,0,0.25)', padding: '1px 4px', borderRadius: '3px' }}>venv\Scripts\python</code><br />
+            to enable CUDA.
+          </p>
+        )}
+
       </div>
     </div>
   );
@@ -91,6 +137,17 @@ function App() {
 
   const toggleTheme = () => setTheme(t => t === 'dark' ? 'light' : 'dark');
 
+  const toggleDevice = async () => {
+    if (!systemStatus?.cuda_available) return;
+    const next = systemStatus.device === 'CUDA' ? 'cpu' : 'cuda';
+    try {
+      const result = await setDevice(next);
+      setSystemStatus(prev => ({ ...prev, device: result.device }));
+    } catch (err) {
+      console.error('Failed to toggle device:', err);
+    }
+  };
+
   useEffect(() => {
     const fetchStatus = async () => {
       try {
@@ -106,7 +163,12 @@ function App() {
   return (
     <Router>
       <div className="app-container">
-        <Sidebar systemStatus={systemStatus} theme={theme} onToggleTheme={toggleTheme} />
+        <Sidebar
+          systemStatus={systemStatus}
+          theme={theme}
+          onToggleTheme={toggleTheme}
+          onToggleDevice={toggleDevice}
+        />
         <main className="main-content">
           <Routes>
             <Route path="/" element={<Dashboard systemStatus={systemStatus} />} />
@@ -121,4 +183,3 @@ function App() {
 }
 
 export default App;
-

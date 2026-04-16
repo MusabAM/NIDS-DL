@@ -24,19 +24,41 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+# Mutable device — can be toggled at runtime via /api/device
+cuda_available = torch.cuda.is_available()
+device = torch.device("cuda" if cuda_available else "cpu")
 
 
 @app.get("/api/status")
 def get_status():
     return {
         "status": "Online",
-        "device": "CUDA" if torch.cuda.is_available() else "CPU",
+        "device": device.type.upper(),
+        "cuda_available": cuda_available,
         "datasets": list(utils.DATASET_CONFIGS.keys()),
         "models": {
             k: list(v["model_files"].keys()) for k, v in utils.DATASET_CONFIGS.items()
         },
     }
+
+
+class DeviceToggleRequest(BaseModel):
+    device: str  # "cuda" or "cpu"
+
+
+@app.post("/api/device")
+def set_device(req: DeviceToggleRequest):
+    global device
+    requested = req.device.lower()
+    if requested == "cuda":
+        if not cuda_available:
+            raise HTTPException(status_code=400, detail="CUDA is not available on this system")
+        device = torch.device("cuda")
+    elif requested == "cpu":
+        device = torch.device("cpu")
+    else:
+        raise HTTPException(status_code=400, detail="Invalid device. Use 'cuda' or 'cpu'")
+    return {"device": device.type.upper(), "cuda_available": cuda_available}
 
 
 from datetime import datetime
@@ -335,7 +357,7 @@ async def predict_batch(
                 run_vqc = model_type in ["Ensemble", "Ensemble_VQC"]
 
                 if run_ae:
-                    ae_model, _, _ = utils.load_model_and_scaler(
+                    ae_model, ae_scaler, ae_encoders = utils.load_model_and_scaler(
                         "Autoencoder", dataset_name, device
                     )
                 if run_vqc:
@@ -343,11 +365,28 @@ async def predict_batch(
                         "VQC", dataset_name, device
                     )
 
-                # Pre-process VQC input separately (VQC needs PCA-reduced features)
+                # Pre-process AE input separately for NSL-KDD:
+                # the NSL-KDD Autoencoder uses 41 label-encoded features,
+                # while X_scaled uses the CNN scaler (122 one-hot features).
+                X_scaled_ae = None
+                if ae_model is not None:
+                    if dataset_name == "NSL-KDD":
+                        # Use the AE-specific scaler/encoders
+                        X_scaled_ae = utils.preprocess_input(
+                            df.copy(), ae_scaler, feature_cols, ae_encoders,
+                            dataset_name, model_type="Autoencoder"
+                        )
+                    else:
+                        # For other datasets the CNN scaler is compatible with the AE
+                        X_scaled_ae = X_scaled
+
+                # Pre-process VQC input separately (VQC needs PCA-reduced features).
+                # Pass encoders so categorical cols (e.g. UNSW 'proto') are label-encoded
+                # before transform() is called.
                 X_scaled_vqc = None
                 if vqc_model is not None and vqc_scaler is not None:
                     X_scaled_vqc = utils.preprocess_input(
-                        df.copy(), vqc_scaler, feature_cols, None,
+                        df.copy(), vqc_scaler, feature_cols, encoders,
                         dataset_name, model_type="VQC"
                     )
 
@@ -379,6 +418,13 @@ async def predict_batch(
                         ).to(device)
                         vqc_outputs = vqc_model(X_vqc_batch)
 
+                    # AE batch tensor — may differ from X_batch for NSL-KDD
+                    X_ae_batch = None
+                    if ae_model is not None and X_scaled_ae is not None:
+                        X_ae_batch = torch.FloatTensor(
+                            X_scaled_ae[i : i + batch_size]
+                        ).to(device)
+
                     # Iterate through the batch to vote
                     for j in range(len(X_batch)):
                         votes = 0
@@ -403,10 +449,10 @@ async def predict_batch(
 
                         # Phase 2: runs only if Phase 1 says Normal
                         if not is_attack:
-                            # Phase 2a: Autoencoder
-                            if ae_model is not None:
+                            # Phase 2a: Autoencoder — uses X_ae_batch (may be AE-specific for NSL-KDD)
+                            if ae_model is not None and X_ae_batch is not None:
                                 loss = ae_model.reconstruction_error(
-                                    X_batch[j].unsqueeze(0)
+                                    X_ae_batch[j].unsqueeze(0)
                                 ).item()
                                 ae_threshold = utils.DATASET_CONFIGS.get(dataset_name, {}).get("autoencoder_threshold", 0.1)
                                 if loss > ae_threshold:
