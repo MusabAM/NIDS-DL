@@ -96,7 +96,7 @@ const Dashboard = ({ systemStatus }) => {
                         <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 500 }}>Select Model:</span>
                         <select
                             className="form-control"
-                            style={{ width: '180px', padding: '0.4rem 0.8rem', background: 'rgba(0,0,0,0.2)' }}
+                            style={{ width: '180px', padding: '0.4rem 0.8rem', background: 'var(--input-bg)', color: 'var(--input-color)' }}
                             value={selectedModel}
                             onChange={(e) => setSelectedModel(e.target.value)}
                         >
@@ -107,10 +107,10 @@ const Dashboard = ({ systemStatus }) => {
                     </div>
                 </div>
 
-                <div style={{ width: '100%', height: 400, background: 'rgba(0,0,0,0.1)', borderRadius: '12px', padding: '1rem', border: '1px solid rgba(255,255,255,0.05)' }}>
+                <div style={{ width: '100%', height: 400, background: 'var(--chart-bg)', borderRadius: '12px', padding: '1rem', border: '1px solid var(--chart-border)' }}>
                     <ResponsiveContainer width="100%" height="100%">
                         <RadarChart cx="50%" cy="50%" outerRadius="75%" data={modelMetrics[selectedModel]}>
-                            <PolarGrid stroke="rgba(255,255,255,0.1)" />
+                            <PolarGrid stroke="var(--chart-grid)" />
                             <PolarAngleAxis
                                 dataKey="metric"
                                 tick={{ fill: 'var(--text-secondary)', fontSize: 13, fontWeight: 500 }}
@@ -118,13 +118,13 @@ const Dashboard = ({ systemStatus }) => {
                             <PolarRadiusAxis
                                 angle={90}
                                 domain={[80, 100]}
-                                stroke="rgba(255,255,255,0.2)"
-                                tick={{ fill: 'rgba(255,255,255,0.4)', fontSize: 11 }}
+                                stroke="var(--chart-grid)"
+                                tick={{ fill: 'var(--chart-tick)', fontSize: 11 }}
                                 tickCount={5}
                             />
                             <Tooltip
-                                contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.95)', borderColor: 'rgba(59, 130, 246, 0.3)', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.5)' }}
-                                itemStyle={{ color: '#fff', fontWeight: 'bold' }}
+                                contentStyle={{ backgroundColor: 'var(--glass-bg)', borderColor: 'rgba(59, 130, 246, 0.3)', borderRadius: '8px', boxShadow: '0 4px 12px rgba(0,0,0,0.2)' }}
+                                itemStyle={{ color: 'var(--text-primary)', fontWeight: 'bold' }}
                                 formatter={(value) => [`${value}%`]}
                             />
                             <Radar
@@ -135,7 +135,7 @@ const Dashboard = ({ systemStatus }) => {
                                 fillOpacity={0.4}
                                 strokeWidth={2}
                                 dot={{ r: 4, fill: "var(--accent-color)" }}
-                                activeDot={{ r: 6, fill: "#fff", stroke: "var(--primary-color)", strokeWidth: 2 }}
+                                activeDot={{ r: 6, fill: "var(--text-primary)", stroke: "var(--primary-color)", strokeWidth: 2 }}
                             />
                         </RadarChart>
                     </ResponsiveContainer>

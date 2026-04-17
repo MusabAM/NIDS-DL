@@ -163,7 +163,7 @@ const BatchAnalysis = ({ systemStatus }) => {
                             justifyContent: 'center',
                             padding: '3rem 2rem',
                             textAlign: 'center',
-                            background: 'rgba(255,255,255,0.02)',
+                            background: 'var(--nav-hover-bg)',
                             cursor: 'pointer',
                             transition: 'all 0.2s',
                             minHeight: '250px'
@@ -197,7 +197,7 @@ const BatchAnalysis = ({ systemStatus }) => {
                     </button>
 
                     {error && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--danger-color)', marginTop: '1rem', padding: '12px', background: 'rgba(239,68,68,0.1)', borderRadius: '8px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--danger-color)', marginTop: '1rem', padding: '12px', background: 'var(--stream-entry-attack)', borderRadius: '8px' }}>
                             <AlertCircle size={20} />
                             <span style={{ fontSize: '0.9rem' }}>{error}</span>
                         </div>
@@ -210,12 +210,12 @@ const BatchAnalysis = ({ systemStatus }) => {
                         <h3 style={{ marginBottom: '1.5rem' }}>Batch Summary</h3>
 
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '1.5rem' }}>
-                            <div style={{ padding: '1rem', background: 'rgba(239,68,68,0.1)', borderRadius: '8px', borderLeft: '3px solid var(--danger-color)' }}>
+                            <div style={{ padding: '1rem', background: 'var(--stream-entry-attack)', borderRadius: '8px', borderLeft: '3px solid var(--danger-color)' }}>
                                 <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '4px' }}>Attacks Found</div>
                                 <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>{result.attacks}</div>
                             </div>
 
-                            <div style={{ padding: '1rem', background: 'rgba(16,185,129,0.1)', borderRadius: '8px', borderLeft: '3px solid var(--secondary-color)' }}>
+                            <div style={{ padding: '1rem', background: 'var(--stream-entry-normal)', borderRadius: '8px', borderLeft: '3px solid var(--secondary-color)' }}>
                                 <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '4px' }}>Normal Flows</div>
                                 <div style={{ fontSize: '1.8rem', fontWeight: 'bold', color: 'var(--text-primary)' }}>{result.normal}</div>
                             </div>
@@ -239,8 +239,8 @@ const BatchAnalysis = ({ systemStatus }) => {
                                         ))}
                                     </Pie>
                                     <Tooltip
-                                        contentStyle={{ backgroundColor: 'rgba(15, 23, 42, 0.9)', borderColor: 'rgba(255,255,255,0.1)', borderRadius: '8px' }}
-                                        itemStyle={{ color: '#fff' }}
+                                        contentStyle={{ backgroundColor: 'var(--glass-bg)', borderColor: 'var(--glass-border)', borderRadius: '8px' }}
+                                        itemStyle={{ color: 'var(--text-primary)' }}
                                     />
                                     <Legend />
                                 </PieChart>
@@ -268,7 +268,7 @@ const BatchAnalysis = ({ systemStatus }) => {
                             </thead>
                             <tbody>
                                 {result.results.slice(0, 10).map((row, idx) => (
-                                    <tr key={idx} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                                    <tr key={idx} style={{ borderBottom: '1px solid var(--glass-border)' }}>
                                         <td style={{ padding: '12px 16px' }}>{idx + 1}</td>
                                         <td style={{ padding: '12px 16px' }}>
                                             <span className={`badge ${row.Prediction === 'Attack' ? 'badge-danger' : 'badge-success'}`}>

@@ -166,7 +166,7 @@ const LivePrediction = ({ systemStatus }) => {
                     <h2>Live Traffic Analysis</h2>
                     <p>Enter network flow parameters or listen to live network interfaces.</p>
                 </div>
-                <div style={{ display: 'flex', gap: '0.5rem', background: 'rgba(0,0,0,0.2)', padding: '0.5rem', borderRadius: '8px' }}>
+                <div style={{ display: 'flex', gap: '0.5rem', background: 'var(--nav-hover-bg)', padding: '0.5rem', borderRadius: '8px', border: '1px solid var(--glass-border)' }}>
                     <button
                         className={`btn ${mode === 'manual' ? 'btn-primary' : ''}`}
                         style={{ padding: '0.5rem 1rem', background: mode !== 'manual' ? 'transparent' : '' }}
@@ -267,20 +267,20 @@ const LivePrediction = ({ systemStatus }) => {
                             {result && !loading && (
                                 <div className="fade-in" style={{ width: '100%' }}>
                                     {result.prediction === 'Attack' ? (
-                                        <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', padding: '2rem 1rem', borderRadius: '12px' }}>
+                                        <div style={{ background: 'var(--stream-entry-attack)', border: '1px solid rgba(239, 68, 68, 0.3)', padding: '2rem 1rem', borderRadius: '12px' }}>
                                             <AlertTriangle size={64} color="var(--danger-color)" style={{ marginBottom: '1rem' }} />
                                             <h2 style={{ color: 'var(--danger-color)', marginBottom: '0.5rem' }}>Threat Detected</h2>
                                             <p style={{ margin: 0, fontWeight: 600 }}>ATTACK</p>
                                         </div>
                                     ) : (
-                                        <div style={{ background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '2rem 1rem', borderRadius: '12px' }}>
+                                        <div style={{ background: 'var(--stream-entry-normal)', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '2rem 1rem', borderRadius: '12px' }}>
                                             <CheckCircle size={64} color="var(--secondary-color)" style={{ marginBottom: '1rem' }} />
                                             <h2 style={{ color: 'var(--secondary-color)', marginBottom: '0.5rem' }}>Traffic Status</h2>
                                             <p style={{ margin: 0, fontWeight: 600 }}>NORMAL</p>
                                         </div>
                                     )}
 
-                                    <div style={{ marginTop: '2rem', padding: '1rem', background: 'rgba(0,0,0,0.2)', borderRadius: '8px' }}>
+                                    <div style={{ marginTop: '2rem', padding: '1rem', background: 'var(--nav-hover-bg)', borderRadius: '8px', border: '1px solid var(--glass-border)' }}>
                                         <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>
                                             {result.metric_type}
                                         </div>
@@ -295,14 +295,14 @@ const LivePrediction = ({ systemStatus }) => {
                 </div>
             ) : (
                 <div className="glass-panel fade-in" style={{ minHeight: '500px', display: 'flex', flexDirection: 'column' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '1rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid var(--glass-border)', paddingBottom: '1rem' }}>
                         <div>
                             <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
                                 <Activity size={20} color="var(--primary-color)" />
                                 Real-Time Sniffer Stream
                             </h3>
                             <p style={{ margin: 0, fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
-                                Run <code style={{ color: '#fff', background: 'rgba(0,0,0,0.3)', padding: '2px 4px', borderRadius: '4px' }}>venv/Scripts/python scripts/live_sniffer.py</code> internally.
+                                Run <code style={{ color: 'var(--text-primary)', background: 'var(--code-bg)', padding: '2px 4px', borderRadius: '4px' }}>venv/Scripts/python scripts/live_sniffer.py</code> internally.
                             </p>
                         </div>
                         <button
@@ -314,7 +314,7 @@ const LivePrediction = ({ systemStatus }) => {
                         </button>
                     </div>
 
-                    <div style={{ flex: 1, background: 'rgba(0,0,0,0.3)', borderRadius: '8px', padding: '1rem', overflowY: 'auto', maxHeight: '500px' }}>
+                    <div style={{ flex: 1, background: 'var(--stream-bg)', borderRadius: '8px', padding: '1rem', overflowY: 'auto', maxHeight: '500px', border: '1px solid var(--glass-border)' }}>
                         {!isStreaming && streamHistory.length === 0 && (
                             <div style={{ height: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)' }}>
                                 Stream is paused. Click Connect to begin polling.
@@ -335,7 +335,7 @@ const LivePrediction = ({ systemStatus }) => {
                                     justifyContent: 'space-between',
                                     alignItems: 'center',
                                     padding: '1rem',
-                                    background: item.prediction === 'Attack' ? 'rgba(239,68,68,0.1)' : 'rgba(16,185,129,0.1)',
+                                    background: item.prediction === 'Attack' ? 'var(--stream-entry-attack)' : 'var(--stream-entry-normal)',
                                     borderLeft: `4px solid ${item.prediction === 'Attack' ? 'var(--danger-color)' : 'var(--secondary-color)'}`,
                                     borderRadius: '4px'
                                 }}>

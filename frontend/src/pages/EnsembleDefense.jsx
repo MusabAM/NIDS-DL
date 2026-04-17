@@ -159,7 +159,7 @@ const EnsembleDefense = ({ systemStatus }) => {
                     <h2>Ensemble Defense</h2>
                     <p>Live, concurrent multi-model analysis leveraging supervised &amp; unsupervised checks.</p>
                 </div>
-                <div style={{ display: 'flex', gap: '0.5rem', background: 'rgba(0,0,0,0.2)', padding: '0.5rem', borderRadius: '8px' }}>
+                <div style={{ display: 'flex', gap: '0.5rem', background: 'var(--nav-hover-bg)', padding: '0.5rem', borderRadius: '8px', border: '1px solid var(--glass-border)' }}>
                     <button
                         className={`btn ${mode === 'manual' ? 'btn-primary' : ''}`}
                         style={{ padding: '0.5rem 1rem', background: mode !== 'manual' ? 'transparent' : '' }}
@@ -263,18 +263,18 @@ const EnsembleDefense = ({ systemStatus }) => {
                             {result && !loading && (
                                 <div className="fade-in" style={{ width: '100%' }}>
                                     {result.finalPrediction === 'Attack' ? (
-                                        <div style={{ background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)', padding: '1.5rem 1rem', borderRadius: '12px', marginBottom: '1rem' }}>
+                                        <div style={{ background: 'var(--stream-entry-attack)', border: '1px solid rgba(239, 68, 68, 0.3)', padding: '1.5rem 1rem', borderRadius: '12px', marginBottom: '1rem' }}>
                                             <AlertTriangle size={48} color="var(--danger-color)" style={{ marginBottom: '0.5rem' }} />
                                             <h3 style={{ color: 'var(--danger-color)', margin: 0 }}>Threat Detected (Ensemble)</h3>
                                         </div>
                                     ) : result.zeroDayPossible ? (
-                                        <div style={{ background: 'rgba(234, 179, 8, 0.1)', border: '1px solid rgba(234, 179, 8, 0.3)', padding: '1.5rem 1rem', borderRadius: '12px', marginBottom: '1rem' }}>
+                                        <div style={{ background: 'var(--stream-entry-zero)', border: '1px solid rgba(234, 179, 8, 0.3)', padding: '1.5rem 1rem', borderRadius: '12px', marginBottom: '1rem' }}>
                                             <AlertTriangle size={48} color="#eab308" style={{ marginBottom: '0.5rem' }} />
                                             <h3 style={{ color: '#eab308', margin: 0 }}>Possible Zero-Day</h3>
                                             <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Phase 1 Normal, but Phase 2 flagged anomalous trace.</p>
                                         </div>
                                     ) : (
-                                        <div style={{ background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '1.5rem 1rem', borderRadius: '12px', marginBottom: '1rem' }}>
+                                        <div style={{ background: 'var(--stream-entry-normal)', border: '1px solid rgba(16, 185, 129, 0.3)', padding: '1.5rem 1rem', borderRadius: '12px', marginBottom: '1rem' }}>
                                             <CheckCircle size={48} color="var(--secondary-color)" style={{ marginBottom: '0.5rem' }} />
                                             <h3 style={{ color: 'var(--secondary-color)', margin: 0 }}>Traffic Status Normal</h3>
                                             <p style={{ margin: '0.5rem 0 0 0', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>Passed both Supervised and Unsupervised checks.</p>
@@ -284,13 +284,13 @@ const EnsembleDefense = ({ systemStatus }) => {
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', textAlign: 'left' }}>
                                         <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '0.5rem' }}>Ensemble Details</div>
                                         {result.phase1?.map((r, i) => (
-                                            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.75rem', background: 'rgba(0,0,0,0.2)', borderRadius: '6px', borderLeft: r.prediction === 'Attack' ? '3px solid var(--danger-color)' : '3px solid var(--secondary-color)' }}>
+                                            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.75rem', background: 'var(--nav-hover-bg)', borderRadius: '6px', borderLeft: r.prediction === 'Attack' ? '3px solid var(--danger-color)' : '3px solid var(--secondary-color)' }}>
                                                 <span>{r.model || ['CNN', 'LSTM', 'Transformer'][i]}</span>
                                                 <span style={{ color: r.prediction === 'Attack' ? 'var(--danger-color)' : 'var(--secondary-color)', fontWeight: 600 }}>{r.prediction.toUpperCase()}</span>
                                             </div>
                                         ))}
                                         {result.phase2 && result.phase2.map((p2, i) => (
-                                            <div key={`p2-${i}`} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.75rem', background: 'rgba(0,0,0,0.2)', borderRadius: '6px', borderLeft: p2.prediction === 'Attack' ? '3px solid #eab308' : '3px solid var(--secondary-color)', marginTop: '0.5rem' }}>
+                                            <div key={`p2-${i}`} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.75rem', background: 'var(--nav-hover-bg)', borderRadius: '6px', borderLeft: p2.prediction === 'Attack' ? '3px solid #eab308' : '3px solid var(--secondary-color)', marginTop: '0.5rem' }}>
                                                 <span>{p2.model} <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>(Phase 2)</span></span>
                                                 <span style={{ color: p2.prediction === 'Attack' ? '#eab308' : 'var(--secondary-color)', fontWeight: 600 }}>{p2.prediction === 'Attack' ? 'ANOMALY' : 'NORMAL'}</span>
                                             </div>
@@ -303,7 +303,7 @@ const EnsembleDefense = ({ systemStatus }) => {
                 </div>
             ) : (
                 <div className="glass-panel fade-in" style={{ minHeight: '500px', display: 'flex', flexDirection: 'column' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '1rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid var(--glass-border)', paddingBottom: '1rem' }}>
                         <div>
                             <h3 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
                                 <Activity size={20} color="var(--primary-color)" />
@@ -324,9 +324,9 @@ const EnsembleDefense = ({ systemStatus }) => {
                             </div>
                             <p style={{ margin: '6px 0 0 0', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
                                 Packets are captured from the selected interface, features extracted, then submitted to the{' '}
-                                <code style={{ color: '#fff', background: 'rgba(0,0,0,0.3)', padding: '1px 4px', borderRadius: '3px' }}>{ensembleMode}</code>{' '}
+                                <code style={{ color: 'var(--text-primary)', background: 'var(--code-bg)', padding: '1px 4px', borderRadius: '3px' }}>{ensembleMode}</code>{' '}
                                 model using the{' '}
-                                <code style={{ color: '#fff', background: 'rgba(0,0,0,0.3)', padding: '1px 4px', borderRadius: '3px' }}>{dataset}</code>{' '}
+                                <code style={{ color: 'var(--text-primary)', background: 'var(--code-bg)', padding: '1px 4px', borderRadius: '3px' }}>{dataset}</code>{' '}
                                 feature schema.
                             </p>
                         </div>
@@ -339,7 +339,7 @@ const EnsembleDefense = ({ systemStatus }) => {
                         </button>
                     </div>
 
-                    <div style={{ flex: 1, background: 'rgba(0,0,0,0.3)', borderRadius: '8px', padding: '1rem', overflowY: 'auto', maxHeight: '500px' }}>
+                    <div style={{ flex: 1, background: 'var(--stream-bg)', borderRadius: '8px', padding: '1rem', overflowY: 'auto', maxHeight: '500px', border: '1px solid var(--glass-border)' }}>
                         {!isStreaming && streamHistory.length === 0 && (
                             <div style={{ height: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)' }}>
                                 Stream is paused. Click Connect to begin capturing live packets.
@@ -360,7 +360,7 @@ const EnsembleDefense = ({ systemStatus }) => {
                                     flexDirection: 'column',
                                     gap: '0.5rem',
                                     padding: '1rem',
-                                    background: item.zeroDayPossible ? 'rgba(234, 179, 8, 0.1)' : (item.prediction === 'Attack' ? 'rgba(239,68,68,0.1)' : 'rgba(16,185,129,0.1)'),
+                                    background: item.zeroDayPossible ? 'var(--stream-entry-zero)' : (item.prediction === 'Attack' ? 'var(--stream-entry-attack)' : 'var(--stream-entry-normal)'),
                                     borderLeft: `4px solid ${item.zeroDayPossible ? '#eab308' : (item.prediction === 'Attack' ? 'var(--danger-color)' : 'var(--secondary-color)')}`,
                                     borderRadius: '4px'
                                 }}>
@@ -393,12 +393,12 @@ const EnsembleDefense = ({ systemStatus }) => {
                                     {item.phase1 && item.phase1.length > 0 && (
                                         <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap', marginTop: '0.25rem' }}>
                                             {item.phase1.map((r, i) => (
-                                                <span key={i} style={{ fontSize: '0.75rem', padding: '2px 6px', borderRadius: '4px', background: 'rgba(0,0,0,0.3)', color: r.prediction === 'Attack' ? 'var(--danger-color)' : 'var(--secondary-color)' }}>
+                                                <span key={i} style={{ fontSize: '0.75rem', padding: '2px 6px', borderRadius: '4px', background: 'var(--code-bg)', color: r.prediction === 'Attack' ? 'var(--danger-color)' : 'var(--secondary-color)' }}>
                                                     {r.model || ['CNN', 'LSTM', 'Transformer'][i]}: {r.prediction.toUpperCase()}
                                                 </span>
                                             ))}
                                             {item.phase2 && item.phase2.map((p2, pi) => (
-                                                <span key={`stream-p2-${pi}`} style={{ fontSize: '0.75rem', padding: '2px 6px', borderRadius: '4px', background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(234,179,8,0.3)', color: p2.prediction === 'Attack' ? '#eab308' : 'var(--secondary-color)' }}>
+                                                <span key={`stream-p2-${pi}`} style={{ fontSize: '0.75rem', padding: '2px 6px', borderRadius: '4px', background: 'var(--nav-hover-bg)', border: '1px solid rgba(234,179,8,0.3)', color: p2.prediction === 'Attack' ? '#eab308' : 'var(--secondary-color)' }}>
                                                     {p2.model} (P2): {p2.prediction === 'Attack' ? 'ANOMALY' : 'NORMAL'}
                                                 </span>
                                             ))}
@@ -411,7 +411,7 @@ const EnsembleDefense = ({ systemStatus }) => {
                                             <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
                                                 {item.metric_type === 'Reconstruction Error' ? 'Recon. Error' : 'Confidence'}
                                             </span>
-                                            <div style={{ flex: 1, height: '4px', background: 'rgba(255,255,255,0.1)', borderRadius: '2px', overflow: 'hidden' }}>
+                                            <div style={{ flex: 1, height: '4px', background: 'var(--glass-border)', borderRadius: '2px', overflow: 'hidden' }}>
                                                 <div style={{
                                                     width: `${Math.min(item.confidence * 100, 100)}%`,
                                                     height: '100%',

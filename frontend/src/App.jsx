@@ -96,8 +96,8 @@ const Sidebar = ({ systemStatus, theme, onToggleTheme, onToggleDevice }) => {
             width: '100%',
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '7px',
             padding: '8px 12px', borderRadius: '8px',
-            border: `1px solid ${isGpu ? 'rgba(16,185,129,0.45)' : 'rgba(99,102,241,0.45)'}`,
-            background: isGpu ? 'rgba(16,185,129,0.12)' : 'rgba(99,102,241,0.12)',
+            border: `1px solid ${isGpu ? 'rgba(16,185,129,0.3)' : 'rgba(59,130,246,0.3)'}`,
+            background: isGpu ? 'rgba(16,185,129,0.08)' : 'rgba(59,130,246,0.08)',
             color: isGpu ? 'var(--secondary-color)' : 'var(--primary-color)',
             cursor: cudaAvailable ? 'pointer' : 'not-allowed',
             opacity: cudaAvailable ? 1 : 0.4,
@@ -115,7 +115,7 @@ const Sidebar = ({ systemStatus, theme, onToggleTheme, onToggleDevice }) => {
         {systemStatus && !cudaAvailable && (
           <p style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', margin: '6px 0 0 0', textAlign: 'center', opacity: 0.65, lineHeight: 1.4 }}>
             Restart the backend with<br />
-            <code style={{ background: 'rgba(0,0,0,0.25)', padding: '1px 4px', borderRadius: '3px' }}>venv\Scripts\python</code><br />
+            <code style={{ background: 'var(--code-bg)', padding: '1px 4px', borderRadius: '3px', color: 'var(--text-primary)' }}>venv\Scripts\python</code><br />
             to enable CUDA.
           </p>
         )}
