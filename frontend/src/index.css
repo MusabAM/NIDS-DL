@@ -249,3 +249,7 @@ p  { color: var(--text-secondary); line-height: 1.6; margin-bottom: 1rem; }
 ::-webkit-scrollbar-track { background: var(--scrollbar-track); }
 ::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.35); border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: rgba(148, 163, 184, 0.55); }
+.btn-icon-hover:hover {
+  background: var(--nav-hover-bg) !important;
+  color: var(--primary-color) !important;
+}

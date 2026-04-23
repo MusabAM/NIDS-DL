@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { predictBatch } from '../services/api';
-import { UploadCloud, FileText, Loader2, AlertCircle } from 'lucide-react';
+import { UploadCloud, FileText, Loader2, AlertCircle, Clipboard, Check } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
 const DATASET_OPTIONS = ['CICIDS2018', 'CICIDS2017', 'NSL-KDD', 'UNSW-NB15'];
@@ -37,6 +37,8 @@ const BatchAnalysis = ({ systemStatus }) => {
     const [loading, setLoading] = useState(false);
     const [result, setResult] = useState(null);
     const [error, setError] = useState(null);
+    const [currentPage, setCurrentPage] = useState(1);
+    const recordsPerPage = 10;
 
     const availableModels = systemStatus?.models?.[dataset]
         ? [...new Set([...systemStatus.models[dataset], 'Ensemble', 'Ensemble_Phase1', 'Ensemble_AE', 'Ensemble_VQC'])]
@@ -49,6 +51,7 @@ const BatchAnalysis = ({ systemStatus }) => {
         setResult(null);
         setError(null);
         setFile(null);
+        setCurrentPage(1);
     };
 
     const handleFileChange = (e) => {
@@ -68,11 +71,26 @@ const BatchAnalysis = ({ systemStatus }) => {
         }
     };
 
+    const [copiedIndex, setCopiedIndex] = useState(null);
+
+    const handleCopyRow = (row, idx) => {
+        const featureKeys = Object.keys(row).filter(k => 
+            !['prediction', 'attack_probability', 'label', 'class', 'label_type'].includes(k.toLowerCase())
+        );
+        const featuresOnly = {};
+        featureKeys.forEach(k => featuresOnly[k] = row[k]);
+        
+        navigator.clipboard.writeText(JSON.stringify(featuresOnly, null, 2));
+        setCopiedIndex(idx);
+        setTimeout(() => setCopiedIndex(null), 2000);
+    };
+
     const submitBatch = async () => {
         if (!file) return;
         setLoading(true);
         setError(null);
         setResult(null);
+        setCurrentPage(1);
 
         try {
             const data = await predictBatch(dataset, modelType, file);
@@ -250,51 +268,120 @@ const BatchAnalysis = ({ systemStatus }) => {
                 )}
             </div>
 
-            {result && result.results && result.results.length > 0 && (
-                <div className="glass-panel fade-in" style={{ marginTop: '2rem' }}>
-                    <h3 style={{ marginBottom: '1.5rem' }}>Flow Details (Top 100)</h3>
+            {result && result.results && result.results.length > 0 && (() => {
+                const featureKeys = Object.keys(result.results[0]).filter(k => 
+                    !['prediction', 'attack_probability', 'label', 'class'].includes(k.toLowerCase())
+                );
+                
+                const totalRecords = result.results.length;
+                const totalPages = Math.ceil(totalRecords / recordsPerPage);
+                const startIndex = (currentPage - 1) * recordsPerPage;
+                const paginatedResults = result.results.slice(startIndex, startIndex + recordsPerPage);
 
-                    <div style={{ overflowX: 'auto' }}>
-                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
-                            <thead>
-                                <tr style={{ borderBottom: '1px solid var(--glass-border)', textAlign: 'left' }}>
-                                    <th style={{ padding: '12px 16px', color: 'var(--text-secondary)' }}>No.</th>
-                                    <th style={{ padding: '12px 16px', color: 'var(--text-secondary)' }}>Prediction</th>
-                                    <th style={{ padding: '12px 16px', color: 'var(--text-secondary)' }}>Confidence</th>
-                                    {tableCols.map(col => (
-                                        <th key={col.key} style={{ padding: '12px 16px', color: 'var(--text-secondary)' }}>{col.label}</th>
-                                    ))}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {result.results.slice(0, 10).map((row, idx) => (
-                                    <tr key={idx} style={{ borderBottom: '1px solid var(--glass-border)' }}>
-                                        <td style={{ padding: '12px 16px' }}>{idx + 1}</td>
-                                        <td style={{ padding: '12px 16px' }}>
-                                            <span className={`badge ${row.Prediction === 'Attack' ? 'badge-danger' : 'badge-success'}`}>
-                                                {row.Prediction}
-                                            </span>
-                                        </td>
-                                        <td style={{ padding: '12px 16px' }}>
-                                            {typeof row.Attack_Probability === 'number' && row.Attack_Probability <= 1
-                                                ? `${(row.Attack_Probability * 100).toFixed(2)}%`
-                                                : (row.Attack_Probability || 0).toFixed(4)}
-                                        </td>
-                                        {tableCols.map(col => (
-                                            <td key={col.key} style={{ padding: '12px 16px' }}>{row[col.key] ?? '-'}</td>
+                return (
+                    <div className="glass-panel fade-in" style={{ marginTop: '2rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                            <h3 style={{ margin: 0 }}>Analysis Results (Page {currentPage} of {totalPages})</h3>
+                        </div>
+
+                        <div style={{ overflowX: 'auto', border: '1px solid var(--glass-border)', borderRadius: '8px' }}>
+                            <table style={{ width: 'max-content', minWidth: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+                                <thead>
+                                    <tr style={{ background: 'var(--nav-hover-bg)', borderBottom: '1px solid var(--glass-border)', textAlign: 'left' }}>
+                                        <th style={{ padding: '12px 16px', color: 'var(--text-secondary)', position: 'sticky', left: 0, background: 'var(--bg-gradient-end)', zIndex: 10 }}>No.</th>
+                                        <th style={{ padding: '12px 16px', color: 'var(--text-secondary)', position: 'sticky', left: 45, background: 'var(--bg-gradient-end)', zIndex: 10 }}>Prediction</th>
+                                        <th style={{ padding: '12px 16px', color: 'var(--text-secondary)' }}>Confidence</th>
+                                        {featureKeys.map(key => (
+                                            <th key={key} style={{ padding: '12px 16px', color: 'var(--text-secondary)', minWidth: '120px' }}>{key}</th>
                                         ))}
                                     </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                        {result.results.length > 10 && (
-                            <div style={{ padding: '12px 16px', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.85rem' }}>
-                                Showing 10 of {result.total} records...
+                                </thead>
+                                <tbody>
+                                    {paginatedResults.map((row, idx) => {
+                                        const globalIdx = startIndex + idx;
+                                        return (
+                                            <tr key={globalIdx} style={{ borderBottom: '1px solid var(--glass-border)' }}>
+                                                <td style={{ padding: '10px 16px', color: 'var(--text-secondary)', position: 'sticky', left: 0, background: 'var(--bg-gradient-end)', zIndex: 5 }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                        <span>{globalIdx + 1}</span>
+                                                        <button 
+                                                            onClick={() => handleCopyRow(row, globalIdx)}
+                                                            title="Copy JSON"
+                                                            style={{ 
+                                                                background: 'transparent', 
+                                                                border: 'none', 
+                                                                cursor: 'pointer', 
+                                                                color: copiedIndex === globalIdx ? 'var(--secondary-color)' : 'var(--text-secondary)',
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                padding: '4px',
+                                                                borderRadius: '4px',
+                                                                transition: 'all 0.2s'
+                                                            }}
+                                                            className="btn-icon-hover"
+                                                        >
+                                                            {copiedIndex === globalIdx ? <Check size={14} /> : <Clipboard size={14} />}
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                                <td style={{ padding: '10px 16px', position: 'sticky', left: 75, background: 'var(--bg-gradient-end)', zIndex: 5 }}>
+                                                    <span className={`badge ${row.Prediction === 'Attack' ? 'badge-danger' : 'badge-success'}`} style={{ fontSize: '0.7rem' }}>
+                                                        {row.Prediction}
+                                                    </span>
+                                                </td>
+                                                <td style={{ padding: '10px 16px' }}>
+                                                    <div style={{ width: '100px', height: '6px', background: 'var(--glass-border)', borderRadius: '3px', position: 'relative' }}>
+                                                        <div style={{ 
+                                                            position: 'absolute', 
+                                                            left: 0, 
+                                                            top: 0, 
+                                                            height: '100%', 
+                                                            width: `${(row.Attack_Probability * 100).toFixed(0)}%`, 
+                                                            background: row.Prediction === 'Attack' ? 'var(--danger-color)' : 'var(--secondary-color)',
+                                                            borderRadius: '3px'
+                                                        }} />
+                                                    </div>
+                                                    <span style={{ fontSize: '0.7rem', display: 'block', marginTop: '4px' }}>
+                                                        {(row.Attack_Probability * 100).toFixed(1)}%
+                                                    </span>
+                                                </td>
+                                                {featureKeys.map(key => (
+                                                    <td key={key} style={{ padding: '10px 16px', color: 'var(--text-primary)' }}>{row[key] ?? '-'}</td>
+                                                ))}
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+
+                        {/* Pagination Controls */}
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '1rem', marginTop: '1.5rem' }}>
+                            <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                                Records {startIndex + 1}-{Math.min(startIndex + recordsPerPage, totalRecords)} of {totalRecords}
+                            </span>
+                            <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                <button 
+                                    className="btn" 
+                                    style={{ padding: '6px 12px', fontSize: '0.8rem', background: currentPage === 1 ? 'var(--glass-border)' : 'var(--nav-hover-bg)' }}
+                                    disabled={currentPage === 1}
+                                    onClick={() => setCurrentPage(prev => prev - 1)}
+                                >
+                                    Previous
+                                </button>
+                                <button 
+                                    className="btn" 
+                                    style={{ padding: '6px 12px', fontSize: '0.8rem', background: currentPage === totalPages ? 'var(--glass-border)' : 'var(--nav-hover-bg)' }}
+                                    disabled={currentPage === totalPages}
+                                    onClick={() => setCurrentPage(prev => prev + 1)}
+                                >
+                                    Next
+                                </button>
                             </div>
-                        )}
+                        </div>
                     </div>
-                </div>
-            )}
+                );
+            })()}
         </div>
     );
 };

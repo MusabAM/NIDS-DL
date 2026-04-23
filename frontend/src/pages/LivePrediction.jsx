@@ -1,44 +1,38 @@
 import React, { useState, useEffect } from 'react';
 import { predictLive, getLiveHistory, startSniffer, stopSniffer } from '../services/api';
-import { AlertTriangle, CheckCircle, Loader2, Play, Square, Activity } from 'lucide-react';
+import { AlertTriangle, CheckCircle, Loader2, Play, Square, Activity, Code, X } from 'lucide-react';
 
 // Feature templates per dataset (curated key features)
 const DATASET_FEATURES = {
     'CICIDS2018': {
-        'Flow Duration': 0,
-        'Tot Fwd Pkts': 1,
-        'Tot Bwd Pkts': 0,
-        'Fwd Pkt Len Max': 100.0,
-        'Bwd Pkt Len Max': 0.0,
-        'Flow Byts/s': 1000.0,
-        'Flow Pkts/s': 10.0,
-        'Flow IAT Mean': 0.0,
-        'Fwd IAT Mean': 0.0,
-        'Bwd IAT Mean': 0.0,
-        'Pkt Len Mean': 50.0,
-        'Down/Up Ratio': 0,
+        'Flow Duration': 0, 'Tot Fwd Pkts': 1, 'Tot Bwd Pkts': 0, 'TotLen Fwd Pkts': 0, 'TotLen Bwd Pkts': 0,
+        'Fwd Pkt Len Max': 0, 'Fwd Pkt Len Min': 0, 'Fwd Pkt Len Mean': 0, 'Fwd Pkt Len Std': 0,
+        'Bwd Pkt Len Max': 0, 'Bwd Pkt Len Min': 0, 'Bwd Pkt Len Mean': 0, 'Bwd Pkt Len Std': 0,
+        'Flow Byts/s': 0, 'Flow Pkts/s': 0, 'Flow IAT Mean': 0, 'Flow IAT Std': 0, 'Flow IAT Max': 0, 'Flow IAT Min': 0,
+        'Fwd IAT Tot': 0, 'Fwd IAT Mean': 0, 'Fwd IAT Std': 0, 'Fwd IAT Max': 0, 'Fwd IAT Min': 0,
+        'Bwd IAT Tot': 0, 'Bwd IAT Mean': 0, 'Bwd IAT Std': 0, 'Bwd IAT Max': 0, 'Bwd IAT Min': 0,
+        'Fwd PSH Flags': 0, 'Bwd PSH Flags': 0, 'Fwd URG Flags': 0, 'Bwd URG Flags': 0,
+        'Fwd Header Len': 0, 'Bwd Header Len': 0, 'Fwd Pkts/s': 0, 'Bwd Pkts/s': 0,
+        'Pkt Len Min': 0, 'Pkt Len Max': 0, 'Pkt Len Mean': 0, 'Pkt Len Std': 0, 'Pkt Len Var': 0,
+        'FIN Flag Cnt': 0, 'SYN Flag Cnt': 0, 'RST Flag Cnt': 0, 'PSH Flag Cnt': 0, 'ACK Flag Cnt': 0,
+        'URG Flag Cnt': 0, 'CWE Flag Count': 0, 'ECE Flag Cnt': 0, 'Down/Up Ratio': 0, 'Pkt Size Avg': 0,
+        'Fwd Seg Size Avg': 0, 'Bwd Seg Size Avg': 0, 'Fwd Byts/b Avg': 0, 'Fwd Pkts/b Avg': 0, 'Fwd Blk Rate Avg': 0,
+        'Bwd Byts/b Avg': 0, 'Bwd Pkts/b Avg': 0, 'Bwd Blk Rate Avg': 0,
+        'Subflow Fwd Pkts': 0, 'Subflow Fwd Byts': 0, 'Subflow Bwd Pkts': 0, 'Subflow Bwd Byts': 0,
+        'Init Fwd Win Byts': 0, 'Init Bwd Win Byts': 0, 'Fwd Act Data Pkts': 0, 'Fwd Seg Size Min': 0,
+        'Active Mean': 0, 'Active Std': 0, 'Active Max': 0, 'Active Min': 0,
+        'Idle Mean': 0, 'Idle Std': 0, 'Idle Max': 0, 'Idle Min': 0
     },
     'NSL-KDD': {
-        duration: 0,
-        src_bytes: 0,
-        dst_bytes: 0,
-        land: 0,
-        wrong_fragment: 0,
-        urgent: 0,
-        hot: 0,
-        num_failed_logins: 0,
-        logged_in: 0,
-        count: 1,
-        srv_count: 1,
-        serror_rate: 0.0,
-        rerror_rate: 0.0,
-        same_srv_rate: 1.0,
-        diff_srv_rate: 0.0,
-        dst_host_count: 255,
-        dst_host_srv_count: 255,
-        dst_host_same_srv_rate: 1.0,
-        dst_host_diff_srv_rate: 0.0,
-        dst_host_serror_rate: 0.0,
+        duration: 0, protocol_type: 'tcp', service: 'http', flag: 'SF', src_bytes: 0, dst_bytes: 0,
+        land: 0, wrong_fragment: 0, urgent: 0, hot: 0, num_failed_logins: 0, logged_in: 0,
+        num_compromised: 0, root_shell: 0, su_attempted: 0, num_root: 0, num_file_creations: 0,
+        num_shells: 0, num_access_files: 0, num_outbound_cmds: 0, is_host_login: 0, is_guest_login: 0,
+        count: 0, srv_count: 0, serror_rate: 0, srv_serror_rate: 0, rerror_rate: 0, srv_rerror_rate: 0,
+        same_srv_rate: 0, diff_srv_rate: 0, srv_diff_host_rate: 0, dst_host_count: 0, dst_host_srv_count: 0,
+        dst_host_same_srv_rate: 0, dst_host_diff_srv_rate: 0, dst_host_same_src_port_rate: 0,
+        dst_host_srv_diff_host_rate: 0, dst_host_serror_rate: 0, dst_host_srv_serror_rate: 0,
+        dst_host_rerror_rate: 0, dst_host_srv_rerror_rate: 0
     },
     'UNSW-NB15': {
         dur: 0.0,
@@ -83,6 +77,9 @@ const LivePrediction = ({ systemStatus }) => {
     const [result, setResult] = useState(null);
     const [error, setError] = useState(null);
     const [mode, setMode] = useState('manual');
+    const [showExtended, setShowExtended] = useState(false);
+    const [isJsonModalOpen, setIsJsonModalOpen] = useState(false);
+    const [jsonInput, setJsonInput] = useState('');
 
     // Streaming History State
     const [isStreaming, setIsStreaming] = useState(false);
@@ -110,6 +107,28 @@ const LivePrediction = ({ systemStatus }) => {
         // Check if value is numeric or string (for categorical fields)
         const parsedValue = (name === 'protocol_type' || name === 'service' || name === 'flag') ? value : Number(value);
         setFeatures(prev => ({ ...prev, [name]: parsedValue }));
+    };
+
+    const handleImportJson = () => {
+        try {
+            const parsed = JSON.parse(jsonInput);
+            const newFeatures = { ...features };
+            let count = 0;
+
+            Object.keys(parsed).forEach(key => {
+                if (key in newFeatures) {
+                    newFeatures[key] = parsed[key];
+                    count++;
+                }
+            });
+
+            setFeatures(newFeatures);
+            setIsJsonModalOpen(false);
+            setJsonInput('');
+            // Optional: alert(`Successfully imported ${count} features.`);
+        } catch (e) {
+            alert('Invalid JSON format. Please check your input.');
+        }
     };
 
     const submitPrediction = async (e) => {
@@ -157,7 +176,9 @@ const LivePrediction = ({ systemStatus }) => {
     }, []);
 
     const featureEntries = Object.keys(features);
-    const numCols = featureEntries.length > 12 ? 4 : 3;
+    const visibleFeatures = showExtended ? featureEntries : featureEntries.slice(0, 12);
+    const numCols = visibleFeatures.length > 12 ? 4 : 3;
+    const hasMore = featureEntries.length > 12;
 
     return (
         <div className="live-prediction-page fade-in">
@@ -206,16 +227,34 @@ const LivePrediction = ({ systemStatus }) => {
 
             {mode === 'manual' ? (
                 <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 2fr) minmax(0, 1fr)', gap: '2rem' }}>
-                    <form className="glass-panel" onSubmit={submitPrediction}>
-                        <h3 style={{ marginBottom: '1.5rem' }}>
-                            Flow Characteristics ({dataset})
-                        </h3>
+                    <form className="glass-panel" onSubmit={submitPrediction} style={{ position: 'relative' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+                            <h3 style={{ margin: 0 }}>
+                                Flow Characteristics ({dataset})
+                            </h3>
+                            <button
+                                type="button"
+                                className="btn"
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '6px',
+                                    fontSize: '0.8rem',
+                                    padding: '4px 10px',
+                                    background: 'var(--nav-hover-bg)',
+                                    border: '1px solid var(--glass-border)'
+                                }}
+                                onClick={() => setIsJsonModalOpen(true)}
+                            >
+                                <Code size={14} /> Import JSON
+                            </button>
+                        </div>
 
                         <div style={{ display: 'grid', gridTemplateColumns: `repeat(${numCols}, 1fr)`, gap: '1rem' }}>
-                            {featureEntries.map((key) => (
+                            {visibleFeatures.map((key) => (
                                 <div className="form-group" key={key}>
                                     <label className="form-label" style={{ fontSize: '0.8rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={key}>{key}</label>
-                                    {(key === 'protocol_type' || key === 'service' || key === 'flag') ? (
+                                    {(key === 'protocol_type' || key === 'service' || key === 'flag' || key === 'proto' || key === 'state' || key === 'service_unsw') ? (
                                         <input
                                             type="text"
                                             name={key}
@@ -236,6 +275,19 @@ const LivePrediction = ({ systemStatus }) => {
                                 </div>
                             ))}
                         </div>
+
+                        {hasMore && (
+                            <div style={{ marginTop: '1.5rem', textAlign: 'center' }}>
+                                <button
+                                    type="button"
+                                    className="btn"
+                                    style={{ fontSize: '0.85rem', background: 'transparent', color: 'var(--primary-color)', border: '1px solid var(--primary-color)' }}
+                                    onClick={() => setShowExtended(!showExtended)}
+                                >
+                                    {showExtended ? 'Hide Extended Features' : `Show All ${featureEntries.length} Features`}
+                                </button>
+                            </div>
+                        )}
 
                         <button type="submit" className="btn btn-primary" style={{ marginTop: '1.5rem', width: '100%' }} disabled={loading}>
                             {loading ? <><Loader2 size={18} className="animate-spin" /> Analyzing...</> : 'Analyze Traffic'}
@@ -358,6 +410,54 @@ const LivePrediction = ({ systemStatus }) => {
                                     </div>
                                 </div>
                             ))}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* JSON Import Modal */}
+            {isJsonModalOpen && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    background: 'rgba(0,0,0,0.6)',
+                    backdropFilter: 'blur(4px)',
+                    zIndex: 1000,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    padding: '1rem'
+                }}>
+                    <div className="glass-panel fade-in" style={{ width: '100%', maxWidth: '500px', padding: '1.5rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                            <h3 style={{ margin: 0 }}>Import Feature JSON</h3>
+                            <button className="btn-icon" onClick={() => setIsJsonModalOpen(false)}>
+                                <X size={20} />
+                            </button>
+                        </div>
+                        <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '1rem' }}>
+                            Paste a JSON object with key-value pairs matching the feature names for {dataset}.
+                        </p>
+                        <textarea
+                            className="form-control"
+                            style={{
+                                width: '100%',
+                                minHeight: '200px',
+                                fontFamily: 'monospace',
+                                fontSize: '0.8rem',
+                                background: 'rgba(0,0,0,0.2)',
+                                marginBottom: '1.5rem'
+                            }}
+                            placeholder={`{\n  "Flow Duration": 150000,\n  "Tot Fwd Pkts": 10,\n  ...\n}`}
+                            value={jsonInput}
+                            onChange={(e) => setJsonInput(e.target.value)}
+                        />
+                        <div style={{ display: 'flex', gap: '1rem' }}>
+                            <button className="btn" style={{ flex: 1 }} onClick={() => setIsJsonModalOpen(false)}>Cancel</button>
+                            <button className="btn btn-primary" style={{ flex: 2 }} onClick={handleImportJson}>Apply Features</button>
                         </div>
                     </div>
                 </div>
